@@ -45,25 +45,33 @@ function facts(property) {
   </ul>`;
 }
 
+const PAGE_SIZE = 9;
+let shown = PAGE_SIZE;
+const isNew = property => property.publishedAt && Date.now() - Date.parse(property.publishedAt) < 14 * 86400000;
+
+// Clean card: photo, price, title, location, three key facts, one clear action.
 function propertyCard(property, index) {
-  return `<article class="card" aria-labelledby="title-${property.id}">
+  const url = propertyUrl(property.id);
+  const facts = [
+    property.rooms ? `${property.rooms} חד׳` : "",
+    property.area ? `${number.format(property.area)} מ״ר` : "",
+    property.floor === 0 ? "קומת קרקע" : property.floor ? `קומה ${property.floor}` : "",
+  ].filter(Boolean);
+  return `<article class="card listing-card" aria-labelledby="title-${property.id}">
     <div class="card-media">
-      ${property.image||property.photo?`<img src="${safe(property.image??`/media/${property.photo}.webp`)}" alt="${safe(property.alt)}" ${index>2?'loading="lazy"':""} width="760" height="420">`:`<div class="card-no-photo">${icon("home")}<span>תמונה תתווסף בהמשך</span></div>`}
-      ${badges(property)}
-      <button class="save-card" type="button" data-save="${property.id}" aria-label="שמירה: ${safe(property.title)}" aria-pressed="false">${icon("heart")} <span>שמירה</span></button>
+      ${property.image||property.photo?`<img src="${safe(property.image??`/media/${property.photo}.webp`)}" alt="${safe(property.alt)}" ${index>2?'loading="lazy"':""} width="760" height="570">`:`<div class="card-no-photo">${icon("home")}<span>תמונות בקרוב</span></div>`}
+      <div class="badges"><span class="tag tag-${property.deal}">${dealNames[property.deal]}</span>${property.status==="negotiation"?'<span class="tag tag-hot">במשא ומתן</span>':isNew(property)?'<span class="tag tag-new">חדש באתר</span>':""}</div>
+      <button class="save-card" type="button" data-save="${property.id}" aria-label="שמירה: ${safe(property.title)}" aria-pressed="false">${icon("heart")}</button>
     </div>
     <div class="card-body">
+      ${priceLabel(property)}
+      <h3 id="title-${property.id}"><a href="${url}">${safe(property.title)}</a></h3>
       ${locationLabel(property)}
-      <h3 id="title-${property.id}">${safe(property.title)}</h3>
-      ${facts(property)}
-      <div class="card-bottom">
-        ${priceLabel(property)}
-        <a class="details" href="${propertyUrl(property.id)}" aria-label="פרטי הנכס: ${safe(property.title)}">פרטי הנכס ${icon("left")}</a>
-      </div>
-      ${property.publishedAt?`<a class="market-card-button" href="${propertyUrl(property.id)}#comparables" aria-label="עסקאות להשוואה: ${safe(property.title)}">${icon("chart")} עסקאות להשוואה <span>עד 36 חודשים</span></a>`:`<button class="market-card-button" type="button" data-market="${property.id}" aria-label="עסקאות באזור: ${safe(property.title)}">${icon("chart")} עסקאות באזור <span>עד 36 חודשים</span></button>`}
-      <a class="visit-card-link" href="/visit?property=${encodeURIComponent(property.id)}" aria-label="בקשת סיור: ${safe(property.title)}">בקשת סיור</a>
-      ${compareControl(property)}
-      <div class="card-contacts"><button type="button" class="card-chat" data-whatsapp-property="${property.id}" aria-label="WhatsApp לגבי ${safe(property.title)}">WhatsApp</button>${brandContacts.map(c=>`<a href="tel:${c.tel}">${c.name} <bdi>${c.display}</bdi></a>`).join("")}</div>
+      ${facts.length?`<p class="card-facts">${facts.map(f=>`<span>${f}</span>`).join("")}</p>`:""}
+    </div>
+    <div class="card-actions">
+      <a class="details" href="${url}" tabindex="-1" aria-hidden="true">לפרטים ולתמונות ${icon("left")}</a>
+      <button type="button" class="card-whatsapp" data-whatsapp-property="${property.id}" aria-label="WhatsApp לגבי ${safe(property.title)}">${icon("chat")}<span>WhatsApp</span></button>
     </div>
   </article>`;
 }
@@ -94,7 +102,10 @@ function renderResults() {
 
   const selected = filterProperties({...filters, min, max}, sort.value);
   const results = savedFilter.getAttribute("aria-pressed") === "true" ? selected.filter(property => isSaved(property.id)) : selected;
-  cards.innerHTML = results.map(propertyCard).join("");
+  cards.innerHTML = results.slice(0, shown).map(propertyCard).join("");
+  const more = document.querySelector("#show-more");
+  more.hidden = results.length <= shown;
+  more.textContent = `הצגת עוד נכסים (${results.length - shown})`;
   syncSavedControls();
   const sampleOnly=!properties.some(p=>p.publishedAt);
   count.textContent = results.length === 1 ? `נמצא נכס אחד${sampleOnly?" לדוגמה":""}` : `נמצאו ${results.length} נכסים${sampleOnly?" לדוגמה":""}`;
@@ -125,7 +136,13 @@ function clearFilters() {
   renderResults();
 }
 
-filtersForm.addEventListener("input", renderResults);
+filtersForm.addEventListener("input", () => { shown = PAGE_SIZE; renderResults(); });
+document.querySelector("#show-more").addEventListener("click", () => {
+  const first = shown;
+  shown += PAGE_SIZE;
+  renderResults();
+  cards.children[first]?.querySelector("h3 a")?.focus();
+});
 filtersForm.addEventListener("submit", event => {
   event.preventDefault();
   if (renderResults()) {

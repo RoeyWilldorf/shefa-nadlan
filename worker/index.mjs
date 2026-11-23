@@ -471,34 +471,90 @@ async function listingPage(env,id,url,assets) {
   const row=await first(env.DB,`${catalogSql} AND p.id=?`,id);
   if (!row) return new Response("הנכס אינו זמין.",{status:404,headers:{...privateHeaders,"Content-Type":"text/plain; charset=utf-8"}});
   const property=publicProperty(row);
-  const [photoIds,comparables]=await Promise.all([
-    rows(env.DB,"SELECT id,label FROM office_media WHERE property_id=? AND public_photo=1 ORDER BY created_at LIMIT 12",id),
+  const [photoIds,comparables,similarRows]=await Promise.all([
+    rows(env.DB,"SELECT id,label FROM office_media WHERE property_id=? AND public_photo=1 ORDER BY created_at,id LIMIT 24",id),
     rows(env.DB,`SELECT deal_date,price,area,rooms,area_label,source_url,source_ref,verified_at FROM office_comparables
       WHERE property_id=? AND deal=? AND archived_at IS NULL AND ${comparisonWindow} ORDER BY deal_date DESC LIMIT 30`,id,property.deal,...comparisonDates()),
+    rows(env.DB,`${catalogSql} AND p.id<>? ORDER BY (p.deal=?) DESC,(p.town=?) DESC,abs(p.price-?) LIMIT 3`,id,property.deal,property.town,property.price),
   ]);
-  const photos=photoIds.map(({id,label},i)=>`<figure><img src="/listing-media/${id}" alt="${escaped(label)}" ${i?"loading=lazy":""}><figcaption>${escaped(label)}</figcaption></figure>`).join("");
-  const facts=[property.rooms&&`${property.rooms} חדרים`,property.area&&`${property.area} מ״ר`,property.floor!==null&&`קומה ${property.floor}`,...property.amenities].filter(Boolean);
-  const price=`${currency.format(property.price)} ₪${property.deal==="rent"?" לחודש":""}`;
+  const icon=name=>`<svg class="icon" aria-hidden="true"><use href="#${name}"/></svg>`;
+  const nis=value=>`${currency.format(value)} ₪`;
+  const price=`${nis(property.price)}${property.deal==="rent"?" לחודש":""}`;
   const title=escaped(property.title);
-  const dealName=property.deal==="rent"?"שכירות":"מכר";
+  const place=escaped([property.town,property.neighborhood].filter(Boolean).join(" · "));
+  const dealWord=property.deal==="rent"?"להשכרה":"למכירה";
+  const alt=i=>escaped(`${property.title} - תמונה ${i+1} מתוך ${photoIds.length}`);
+  const slides=photoIds.map(({id:photo},i)=>`<a class="gallery-slide" id="photo-${i+1}" href="/listing-media/${photo}" target="_blank" rel="noopener"><img src="/listing-media/${photo}" alt="${alt(i)}" ${i?'loading="lazy"':'fetchpriority="high"'} width="1200" height="800"></a>`).join("");
+  const thumbs=photoIds.length>1?`<div class="gallery-thumbs" role="group" aria-label="בחירת תמונה">${photoIds.map(({id:photo},i)=>`<button type="button" data-slide="${i}" aria-label="תמונה ${i+1}"${i?"":' aria-current="true"'}><img src="/listing-media/${photo}" alt="" loading="lazy" width="120" height="80"></button>`).join("")}</div>`:"";
+  const gallery=photoIds.length?`<section class="listing-gallery" aria-label="תמונות הנכס" data-gallery>
+      <div class="gallery-main"><div class="gallery-track" tabindex="0">${slides}</div>
+        ${photoIds.length>1?`<button type="button" class="gallery-nav prev" data-step="-1" aria-label="התמונה הקודמת">${icon("chevron")}</button><button type="button" class="gallery-nav next" data-step="1" aria-label="התמונה הבאה">${icon("chevron")}</button>`:""}
+        <span class="gallery-count" aria-live="polite"><span data-current>1</span> / ${photoIds.length}</span></div>
+      ${thumbs}</section>`
+    :`<div class="listing-gallery empty">${icon("home")}<p>תמונות יעלו בקרוב · אפשר לבקש תמונות נוספות ב־WhatsApp</p></div>`;
+  const floorText=property.floor===null?"":property.floor===0?"קרקע":`${property.floor}${property.floorCount?` מתוך ${property.floorCount}`:""}`;
+  const keyFacts=[
+    ["סוג נכס",property.type],["חדרים",property.rooms||""],["שטח",property.area?`${currency.format(property.area)} מ״ר`:""],
+    ["קומה",floorText],["מצב",property.condition],
+    ["מחיר למ״ר",property.deal==="sale"&&property.area&&property.type!=="מגרש"?nis(Math.round(property.price/property.area)):""],
+    ["כניסה",property.availableOn?property.availableOn.split("-").reverse().join("."):""],
+  ].filter(([,v])=>v!==""&&v!=null);
+  const factsHtml=`<dl class="key-facts">${keyFacts.map(([k,v])=>`<div><dt>${k}</dt><dd>${escaped(v)}</dd></div>`).join("")}</dl>`;
+  const amenities=property.amenities.length?`<section class="listing-section" aria-labelledby="amenities-title"><h2 id="amenities-title">מה יש בנכס</h2>
+      <ul class="feature-list">${property.amenities.map(f=>`<li>${icon("check")}${escaped(f)}</li>`).join("")}</ul></section>`:"";
+  const calls=brandContacts.map(c=>`<a class="call-link" href="tel:${c.tel}">${icon("phone")}<span>${c.name}</span> <bdi>${c.display}</bdi></a>`).join("");
   const formatDay=iso=>iso.slice(0,10).split("-").reverse().join(".");
   const evidence=comparables.map(c=>`<article class="listing-comparison"><h3>${escaped(c.area_label||property.town)}</h3>
-    <p><time datetime="${c.deal_date}">${formatDay(c.deal_date)}</time> · <bdi>${currency.format(c.price)} ₪</bdi>${property.deal==="rent"?" לחודש":""}</p>
+    <p><time datetime="${c.deal_date}">${formatDay(c.deal_date)}</time> · <bdi>${nis(c.price)}</bdi>${property.deal==="rent"?" לחודש":""}</p>
     <p>${[c.rooms&&`${c.rooms} חדרים`,c.area&&`${c.area} מ״ר`,c.area&&`${currency.format(Math.round(c.price/c.area))} ₪ למ״ר`].filter(Boolean).join(" · ")}</p>
     <p><a href="${escaped(c.source_url)}" referrerpolicy="no-referrer">מקור העסקה</a> · אסמכתה ${escaped(c.source_ref)} · נבדקה ב־${formatDay(c.verified_at)}</p></article>`).join("");
-  const officialMarket=property.deal==="sale"?`<a class="button outline" href="https://www.gov.il/he/service/real_estate_information/">מאגר עסקאות נדל״ן של רשות המסים</a>`:"";
-  const detail=`<nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/#listings">נכסים</a><span aria-current="page">${title}</span></nav>
-    <article class="live-listing"><header><p class="location">${escaped([property.town,property.neighborhood].filter(Boolean).join(" · "))}</p><h1>${title}</h1><p class="property-price"><bdi>${price}</bdi></p></header>
-    <div class="action-row"><a class="button primary" href="/visit?property=${id}">בקשת תיאום סיור</a><button class="button outline" type="button" data-whatsapp-property="${id}">WhatsApp על הנכס</button><button class="button outline" type="button" data-share-listing>שיתוף הנכס</button>${brandContacts.map(c=>`<a class="button outline" href="tel:${c.tel}">${c.name} <bdi>${c.display}</bdi></a>`).join("")}</div>
-    <p class="listing-description">${escaped(property.description)}</p>
-    <ul class="amenities" aria-label="מאפייני הנכס">${facts.map(f=>`<li>${escaped(f)}</li>`).join("")}</ul>
-    ${photos?`<section aria-labelledby="gallery-title"><h2 id="gallery-title">תמונות הנכס</h2><div class="live-gallery">${photos}</div></section>`:""}
-    <section id="comparables" aria-labelledby="comparables-title">
-      <h2 id="comparables-title">עסקאות ${dealName} להשוואה ב־36 החודשים האחרונים</h2>
-      ${evidence?`<p>העסקאות שויכו לנכס ונבדקו במשרד מול המקורות המצורפים. אפשר להשוות בין המחירים, השטח ומאפייני הנכס.</p><div class="listing-comparables">${evidence}</div>`:"<p>טרם צורפו עסקאות מאומתות להשוואה לנכס זה.</p>"}
-      ${officialMarket}
-    </section>
-    </article><script type="application/json" id="live-property">${JSON.stringify(property).replace(/</g,"\\u003c")}</script>`;
+  const comparablesHtml=evidence?`<section class="listing-section" id="comparables" aria-labelledby="comparables-title">
+      <h2 id="comparables-title">עסקאות ${property.deal==="rent"?"שכירות":"מכר"} דומות באזור</h2>
+      <p>עסקאות מ־36 החודשים האחרונים, שנבדקו במשרד מול המקור.</p><div class="listing-comparables">${evidence}</div></section>`:"";
+  const similar=similarRows.map(publicProperty);
+  const similarHtml=similar.length?`<section class="listing-section similar" aria-labelledby="similar-title"><h2 id="similar-title">נכסים נוספים שיכולים לעניין אותך</h2>
+      <div class="cards">${similar.map(p=>{
+        const href=`/listing/${p.id}`;
+        const facts=[p.rooms&&`${p.rooms} חד׳`,p.area&&`${currency.format(p.area)} מ״ר`].filter(Boolean);
+        return `<article class="card listing-card"><div class="card-media">${p.image?`<img src="${p.image}" alt="${escaped(p.alt)}" loading="lazy" width="760" height="570">`:`<div class="card-no-photo">${icon("home")}<span>תמונות בקרוב</span></div>`}
+          <div class="badges"><span class="tag tag-${p.deal}">${p.deal==="rent"?"להשכרה":"למכירה"}</span></div></div>
+          <div class="card-body"><p class="price"><bdi>${nis(p.price)}</bdi>${p.deal==="rent"?" <small>לחודש</small>":""}</p>
+          <h3><a href="${href}">${escaped(p.title)}</a></h3><p class="location">${icon("pin")}${escaped([p.town,p.neighborhood].filter(Boolean).join(" · "))}</p>
+          ${facts.length?`<p class="card-facts">${facts.map(f=>`<span>${f}</span>`).join("")}</p>`:""}</div></article>`;}).join("")}</div>
+      <p class="similar-more"><a class="button outline" href="/#listings">לכל הנכסים ${icon("left")}</a></p></section>`:"";
+  const detail=`<nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/">דף הבית</a><a href="/#listings">נכסים</a><span aria-current="page">${title}</span></nav>
+    <article class="live-listing">
+      <header class="listing-head">
+        <div><p class="listing-tags"><span class="tag tag-${property.deal}">${dealWord}</span>${property.status==="negotiation"?'<span class="tag tag-hot">במשא ומתן</span>':""}</p>
+          <h1>${title}</h1><p class="location">${icon("pin")}${place}</p></div>
+        <div class="head-tools"><button class="icon-button" type="button" data-save="${id}" aria-label="שמירת הנכס" aria-pressed="false">${icon("heart")}<span>שמירה</span></button>
+          <button class="icon-button" type="button" data-share-listing>${icon("external")}<span>שיתוף</span></button></div>
+      </header>
+      <div class="listing-layout">
+        <div class="listing-main">
+          ${gallery}
+          <section class="listing-section" aria-labelledby="about-title"><h2 id="about-title">על הנכס</h2>
+            <p class="listing-description">${escaped(property.description)}</p></section>
+          ${amenities}
+          ${comparablesHtml}
+        </div>
+        <aside class="listing-aside" aria-label="מחיר ויצירת קשר">
+          <div class="price-card">
+            <p class="property-price"><bdi>${nis(property.price)}</bdi>${property.deal==="rent"?" <small>לחודש</small>":""}</p>
+            ${factsHtml}
+            <button class="button whatsapp-cta" type="button" data-whatsapp-property="${id}">${icon("chat")}<span>שלחו הודעה ב־WhatsApp</span></button>
+            <a class="button primary" href="/visit?property=${id}">${icon("home")}<span>תיאום סיור בנכס</span></a>
+            <div class="call-links">${calls}</div>
+            <p class="trust-note">${icon("check")}תיווך מורשה · שפע נדל״ן, גדרה · מענה מהיר</p>
+          </div>
+        </aside>
+      </div>
+      ${similarHtml}
+    </article>
+    <div class="mobile-cta" role="region" aria-label="יצירת קשר מהירה"><div><strong><bdi>${nis(property.price)}</bdi></strong>${property.deal==="rent"?" לחודש":""}</div>
+      <a class="button outline" href="tel:${brandContacts[0].tel}" aria-label="התקשרו ל${brandContacts[0].name}">${icon("phone")}<span>חיוג</span></a>
+      <button class="button whatsapp-cta" type="button" data-whatsapp-property="${id}">${icon("chat")}<span>WhatsApp</span></button></div>
+    <script type="application/json" id="live-property">${JSON.stringify(property).replace(/</g,"\\u003c")}</script>`;
   const template=assets["/properties/gedera-01.html"].text;
   const canonical=escaped(`${url.origin}${url.pathname}`);
   const page=template.replace(/<title>.*?<\/title>/,()=>`<title>${title} | שפע נדל״ן</title>`)

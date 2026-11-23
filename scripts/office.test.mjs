@@ -132,7 +132,8 @@ test("property persistence, status gates, optimistic revision, media access and 
   const html=await (await send(`/listing/${id}`)).text();
   assert.match(html,/&lt;script&gt;alert/);assert.doesNotMatch(html,/<script>alert/);
   assert.ok(html.includes("נכס בדיקה &lt;משרד&gt; $&amp;"));
-  assert.match(html,/36 החודשים האחרונים/);
+  assert.doesNotMatch(html,/id="comparables"/); // empty comparables section is hidden
+  assert.match(html,/data-gallery/);assert.match(html,/class="price-card"/);
   assert.doesNotMatch(html,/כתובת פרטית|הערות פנימיות/);
   const exported=await (await send("/api/office/export")).json();
   assert.equal(exported.properties.length,1);assert.equal(exported.media.length,2);

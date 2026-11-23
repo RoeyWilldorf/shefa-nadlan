@@ -106,8 +106,10 @@ export function bindBetterment(container){
     custom.hidden=form.elements.rateMode.value!=="documented";
     custom.disabled=custom.hidden;
   }
-  form.addEventListener("input",clear);
-  form.addEventListener("change",()=>{clear();setMode();});
+  // Live result whenever the entered values are complete; errors appear only on the button.
+  const live=()=>{clear();try{estimateBetterment(Object.fromEntries(new FormData(form)));form.dispatchEvent(new Event("submit",{cancelable:true}));}catch{}};
+  form.addEventListener("input",live);
+  form.addEventListener("change",()=>{setMode();live();});
   form.addEventListener("submit",event=>{
     event.preventDefault();
     clear();

@@ -26,7 +26,7 @@ function amountField(name, label, options = {}) {
 function purchaseFields(price) {
   return `
     ${amountField("price", "שווי הדירה המלא (₪)", {value: price ? number.format(price) : ""})}
-    <label class="field"><span>סוג הרכישה</span><select name="kind" required><option value="">יש לבחור סוג רכישה</option><option value="single">דירה יחידה (תושב ישראל)</option><option value="additional">דירה נוספת</option></select></label>
+    <label class="field"><span>סוג הרכישה</span><select name="kind" required><option value="single" selected>דירה יחידה (תושב ישראל)</option><option value="additional">דירה נוספת</option></select></label>
     <label class="field"><span>חלק נרכש (%)</span><input name="percent" type="number" min="0.01" max="100" step="0.01" value="100" required></label>
     <label class="field"><span>תאריך העסקה</span><input name="date" type="date" dir="ltr" value="${israelDate()}" required></label>`;
 }
@@ -63,10 +63,11 @@ export function calculatorMarkup(kind, price, backButton) {
   </div>`;
 }
 
-function readAmount(form, values, name, optional) {
+function readAmount(form, values, name, optional, quiet = false) {
   const amount = parsePrice(values[name]);
   if (amount === null && optional) return 0;
   if (!Number.isFinite(amount) || amount <= 0 && !(optional && amount === 0)) {
+    if (quiet) throw new Error("incomplete");
     const input = form.elements.namedItem(name);
     input.setCustomValidity("יש להזין סכום תקין בשקלים שלמים.");
     input.reportValidity();
@@ -75,18 +76,18 @@ function readAmount(form, values, name, optional) {
   return amount;
 }
 
-function purchaseResult(form, values) {
-  const price = readAmount(form, values, "price", false);
+function purchaseResult(form, values, quiet) {
+  const price = readAmount(form, values, "price", false, quiet);
   const {total, bands} = estimatePurchase({...values, price, percent: Number(values.percent)});
   const formatter = new Intl.NumberFormat("he-IL", {style: "percent", maximumFractionDigits: 2});
   return `<span>אומדן מס רכישה לחלק שנרכש</span><strong>${money(total)}</strong>
     <ul>${bands.map(band => `<li><span><bdi>${formatter.format(band.rate)}</bdi> על ${money(band.base)}</span><strong>${money(band.tax)}</strong></li>`).join("")}</ul>`;
 }
 
-function gainResult(form, values) {
-  const sale = readAmount(form, values, "sale", false);
-  const adjustedBasis = readAmount(form, values, "adjustedBasis", false);
-  const costs = readAmount(form, values, "costs", true);
+function gainResult(form, values, quiet) {
+  const sale = readAmount(form, values, "sale", false, quiet);
+  const adjustedBasis = readAmount(form, values, "adjustedBasis", false, quiet);
+  const costs = readAmount(form, values, "costs", true, quiet);
   const {gain, tax} = estimateGain({sale, adjustedBasis, costs});
   return `<span>אומדן מס שבח</span><strong>${money(tax)}</strong><p>שבח ריאלי לפי הנתונים שהוזנו: ${money(gain)} · שיעור מס: 25%</p>`;
 }
@@ -95,11 +96,18 @@ export function bindCalculator(container, kind) {
   const form = container.querySelector(".tax-form");
   const result = form.querySelector(".calc-result");
   const error = form.querySelector(".calc-error");
-  form.addEventListener("input", event => {
-    event.target.setCustomValidity?.("");
-    result.hidden = true;
+  // Results update live while typing; the button stays for keyboard and screen-reader users.
+  const live = () => {
     error.hidden = true;
-  });
+    try {
+      const values = Object.fromEntries(new FormData(form));
+      result.innerHTML = kind === "purchase" ? purchaseResult(form, values, true) : gainResult(form, values, true);
+      result.hidden = false;
+    } catch { result.hidden = true; }
+  };
+  form.addEventListener("input", event => { event.target.setCustomValidity?.(""); live(); });
+  form.addEventListener("change", live);
+  queueMicrotask(live);
   form.addEventListener("submit", event => {
     event.preventDefault();
     const values = Object.fromEntries(new FormData(form));

@@ -132,3 +132,41 @@ if(typeof document!=="undefined") document.addEventListener("click",async event=
   }
   window.open(`https://wa.me/?text=${encodeURIComponent(`${title} · שפע נדל״ן\n${url}`)}`,"_blank","noopener");
 });
+
+// Property page gallery: swipeable track, arrows, thumbnails and a "n / total" counter.
+if(typeof document!=="undefined") for(const gallery of document.querySelectorAll("[data-gallery]")){
+  const track=gallery.querySelector(".gallery-track");
+  const slides=[...gallery.querySelectorAll(".gallery-slide")];
+  const thumbs=[...gallery.querySelectorAll("[data-slide]")];
+  const counter=gallery.querySelector("[data-current]");
+  if(!track||slides.length<2) continue;
+  let current=0;
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const go=index=>{
+    current=(index+slides.length)%slides.length;
+    busyUntil=Date.now()+700;
+    track.scrollTo({left:slides[current].offsetLeft-track.offsetLeft,behavior:reduce?"auto":"smooth"});
+    mark();
+  };
+  const mark=()=>{
+    if(counter) counter.textContent=current+1;
+    thumbs.forEach((t,i)=>{if(i===current){t.setAttribute("aria-current","true");t.scrollIntoView({block:"nearest",inline:"nearest"});}else t.removeAttribute("aria-current");});
+  };
+  let timer,busyUntil=0;
+  track.addEventListener("scroll",()=>{clearTimeout(timer);timer=setTimeout(()=>{
+    if(Date.now()<busyUntil) return; // ignore our own animated scroll
+    const index=Math.min(slides.length-1,Math.round(Math.abs(track.scrollLeft)/Math.max(1,track.clientWidth)));
+    if(index!==current){current=index;mark();}
+  },120);},{passive:true});
+  gallery.addEventListener("click",event=>{
+    const step=event.target.closest("[data-step]");
+    const thumb=event.target.closest("[data-slide]");
+    // In RTL the "next" arrow sits on the left and moves forward through the photos.
+    if(step) go(current+Number(step.dataset.step));
+    else if(thumb) go(Number(thumb.dataset.slide));
+  });
+  track.addEventListener("keydown",event=>{
+    if(event.key==="ArrowLeft"){event.preventDefault();go(current+1);}
+    if(event.key==="ArrowRight"){event.preventDefault();go(current-1);}
+  });
+}

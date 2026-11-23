@@ -42,9 +42,9 @@
   </script>
   <link rel="icon" href="/media/shefa-round.webp" type="image/webp">
   <link rel="preload" href="media/hero.webp" as="image">
-  <link rel="stylesheet" href="/styles.css?v=13">
-  <script type="module" src="/app.mjs?v=12"></script>
-  <script type="module" src="/site-tools.mjs"></script>
+  <link rel="stylesheet" href="/styles.css?v=15">
+  <script type="module" src="/app.mjs?v=13"></script>
+  <script type="module" src="/site-tools.mjs?v=3"></script>
 </head>
 <body data-site-tools="public">
   <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -130,22 +130,20 @@
             <h2 id="listings-title" tabindex="-1">נכסים למכירה ולהשכרה</h2>
             <p class="section-caption">כל הנכסים שהמשרד משווק כרגע.</p>
           </div>
-          <label class="sort"><span>מיון לפי</span><select id="sort"><option value="featured">סדר ברירת מחדל</option><option value="low">מחיר מהנמוך לגבוה</option><option value="high">מחיר מהגבוה לנמוך</option><option value="area">שטח מהגדול לקטן</option><option value="recent">נכסים חדשים תחילה</option></select></label>
+          <label class="sort"><span>מיון לפי</span><select id="sort"><option value="featured">החדשים ביותר</option><option value="low">מחיר מהנמוך לגבוה</option><option value="high">מחיר מהגבוה לנמוך</option><option value="area">שטח מהגדול לקטן</option><option value="recent">נכסים חדשים תחילה</option></select></label>
         </div>
         <div class="results-bar">
           <p id="count" role="status" aria-atomic="true"></p>
           <button class="button outline saved-filter" id="saved-filter" type="button" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#heart"/></svg> שמורים <span data-saved-count>0</span></button>
           <button class="text-button" id="reset" type="button" hidden>ניקוי סינון</button>
-          <a class="button outline" href="/visit">תיאום סיור בכמה נכסים</a>
-          <button class="button outline" type="button" id="compare-open" disabled>השוואה (0)</button>
-          <button class="button outline" type="button" id="search-save">שמירת חיפוש בדפדפן</button>
-          <button class="button outline" type="button" id="search-load" disabled>טעינת חיפוש שמור</button>
+          <span class="legacy-tools" hidden><button type="button" id="compare-open" disabled>השוואה</button><button type="button" id="search-save">שמירת חיפוש</button><button type="button" id="search-load" disabled>טעינת חיפוש</button></span>
           <span id="compare-status" role="status" class="sr-only"></span><span id="search-save-status" role="status"></span>
         </div>
         <p class="field-error" id="catalog-error" role="status" hidden>כרגע לא ניתן לטעון את הנכסים. נסו לרענן את העמוד או התקשרו אלינו.</p>
         <div id="cards" class="cards"><!-- BEGIN LISTING LINKS -->
           
         <!-- END LISTING LINKS --></div>
+        <div class="show-more-row"><button class="button outline" type="button" id="show-more" hidden>הצגת עוד נכסים</button></div>
         <div id="empty" class="empty" hidden>
           <span class="empty-icon"><svg class="icon"><use href="#search"/></svg></span>
           <h3 id="empty-title">אין נכסים שתואמים לחיפוש</h3>

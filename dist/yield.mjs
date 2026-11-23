@@ -43,7 +43,14 @@ export function bindYield(container) {
   form.addEventListener("input", event => {
     if (event.target.matches("input")) setError(event.target, "");
     summary.hidden = true;
-    result.hidden = true;
+    // Live result once the required amounts are filled in.
+    const values = {};
+    for (const [name, , required] of fields) {
+      const amount = parsePrice(form.elements.namedItem(name).value);
+      if (Number.isNaN(amount) || (required && !(amount > 0))) { result.hidden = true; return; }
+      values[name] = amount ?? 0;
+    }
+    form.dispatchEvent(new Event("submit", {cancelable: true}));
   });
   form.addEventListener("submit", event => {
     event.preventDefault();
