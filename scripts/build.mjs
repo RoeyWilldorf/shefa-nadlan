@@ -36,6 +36,18 @@ if (import.meta.url===new URL(process.argv[1],`file://${process.cwd()}/`).href) 
   });
   const output=bundle.outputFiles[0].contents;
   await writeFile(new URL("server/index.js",dist),output);
+  // Standalone build (Cloudflare Workers): same app, plus our own login/visitor layer.
+  const migrationDir=new URL("drizzle/",root);
+  const migrations=[];
+  for (const name of (await readdir(migrationDir)).filter(name=>name.endsWith(".sql")).sort()) {
+    migrations.push({name,sql:await readFile(new URL(name,migrationDir),"utf8")});
+  }
+  const standalone=await build({
+    stdin:{contents:`import {makeWorker} from "./worker/index.mjs"; import {withSiteAuth} from "./worker/site-auth.mjs"; export default withSiteAuth(makeWorker(${JSON.stringify(assets)}),{migrations:${JSON.stringify(migrations)}});`,
+      resolveDir:fileURLToPath(root),sourcefile:"standalone-worker.mjs"},
+    format:"esm",bundle:true,platform:"browser",target:"es2022",minify:true,write:false,
+  });
+  await writeFile(new URL("server/standalone.js",dist),standalone.outputFiles[0].contents);
   await writeFile(new URL(".openai/hosting.json",dist),await readFile(new URL(".openai/hosting.json",root)));
   console.log(`Built Worker with ${Object.keys(assets).length} assets (${Buffer.byteLength(output)} bytes)`);
 }

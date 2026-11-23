@@ -82,3 +82,5 @@
 .brand-studio{margin-top:1.4rem;padding-top:1rem;border-top:1px solid var(--line)}
 .brand-studio canvas{display:block;max-width:100%;max-height:540px;width:auto;height:auto;margin:.75rem auto;border-radius:.65rem}
 .brand-studio canvas[hidden]{display:none}
+.office-logout{margin:0}
+.office-logout .office-exit{margin-top:4px;width:100%;background:none;font:inherit;cursor:pointer;text-align:start}

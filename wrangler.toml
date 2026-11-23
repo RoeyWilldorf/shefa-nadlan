@@ -1,0 +1,20 @@
+# Cloudflare Workers deployment for שפע נדל״ן
+# Deploy: npx wrangler deploy   (builds first, then uploads)
+# D1 database and KV namespace are created automatically on the first deploy.
+name = "shefa-nadlan"
+main = "dist/server/standalone.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[build]
+command = "npm run build"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "shefa-nadlan-db"
+
+[[kv_namespaces]]
+binding = "FILES"
+
+[observability]
+enabled = true
