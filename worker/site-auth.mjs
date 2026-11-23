@@ -12,6 +12,7 @@
 //   * If no R2 bucket is bound but a KV namespace "FILES" is, files are stored in KV.
 
 import {robotsTxt,sitemapXml,aiCopy,aiCopyPath,notFoundPage,publicHtml,publicHeaders} from "./site-growth.mjs";
+import {notifyReady,sendEmail,leadEmail,notifyMatches} from "./site-notify.mjs";
 
 const SESSION_COOKIE="shefa_session";
 const VISITOR_COOKIE="shefa_visitor";
@@ -243,7 +244,8 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
       headers.set("oai-authenticated-user-id",`visitor-${visitor}`);
     }
     const innerEnv=env.OFFICE_OWNER_EMAIL?env:{...env,OFFICE_OWNER_EMAIL:DEFAULT_OWNER_EMAIL};
-    const inner=(target,init2={})=>worker.fetch(new Request(new URL(target,url),{method:"GET",headers,redirect:"manual",...init2}),innerEnv,ctx);
+    const innerHeaders=new Headers(headers); innerHeaders.delete("content-length"); innerHeaders.delete("content-type");
+    const inner=(target,init2={})=>worker.fetch(new Request(new URL(target,url),{method:"GET",headers:innerHeaders,redirect:"manual",...init2}),innerEnv,ctx);
 
     if (path==="/robots.txt"&&method==="GET") return robotsTxt(url);
     if (path==="/sitemap.xml"&&method==="GET") return sitemapXml(url,guides,()=>inner("/api/catalog"));
@@ -255,8 +257,20 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
     }
 
     const init={method,headers,redirect:"manual"};
-    if (method!=="GET"&&method!=="HEAD") {init.body=request.body; init.duplex="half";}
+    // New inquiries are read here first so the office can be emailed about them.
+    const inquiryText=path==="/api/inquiries"&&method==="POST"&&notifyReady(env)?await request.text():null;
+    if (inquiryText!==null) init.body=inquiryText;
+    else if (method!=="GET"&&method!=="HEAD") {init.body=request.body; init.duplex="half";}
     let response=await worker.fetch(new Request(request.url,init),innerEnv,ctx);
+    const later=promise=>{const task=promise.catch(error=>console.error("notify_error",error?.message)); if (ctx?.waitUntil) ctx.waitUntil(task); return task;};
+    if (inquiryText!==null&&response.status===201) {
+      try { const {subject,html}=leadEmail(JSON.parse(inquiryText),url.origin); later(sendEmail(env,subject,html)); } catch {}
+    }
+    const savedProperty=owner&&notifyReady(env)&&response.ok&&path.match(/^\/api\/office\/properties(?:\/([0-9a-f-]{36}))?$/i);
+    if (savedProperty&&(method==="POST"||method==="PUT")) {
+      const id=savedProperty[1]||(await response.clone().json().catch(()=>({}))).id;
+      if (id) later(notifyMatches(env,id,()=>inner("/api/office/state"),url.origin));
+    }
 
     const type=response.headers.get("content-type")||"";
     if (response.status===404&&(method==="GET"||method==="HEAD")&&!path.startsWith("/api/")&&!/\.(webp|jpg|png|svg|ttf|css|m?js|txt)$/.test(path)) {

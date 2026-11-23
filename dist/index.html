@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#223e33">
-  <meta name="description" content="חיפוש דירות ובתים למכירה ולהשכרה בגדרה, בשפלה ובמרכז - עד אשדוד, אשקלון, ראשון לציון, בת ים ותל אביב. אבטיפוס פרטי של שפע נדל״ן.">
+  <meta name="description" content="חיפוש דירות ובתים למכירה ולהשכרה בגדרה, בשפלה ובמרכז - עד אשדוד, אשקלון, ראשון לציון, בת ים ותל אביב.">
   <title>שפע נדל״ן | תיווך, דירות ובתים בגדרה, בשפלה ובמרכז</title>
   <link rel="canonical" href="https://shefa-nadlan-gedera.roivil13.chatgpt.site/">
   <meta property="og:type" content="website">
@@ -74,7 +74,7 @@
         <span class="logo"><img src="/media/shefa-round.webp" width="43" height="43" alt=""></span>
         <span class="brand-text"><strong>שפע נדל״ן</strong><small>גדרה והסביבה</small></span>
       </a>
-      <nav aria-label="ניווט ראשי"><a href="#listings">נכסים</a><a href="#services">שירותי תיווך</a><a href="#guides">מדריכים</a><a href="#tools">מחשבונים ומסמכים</a></nav>
+      <nav aria-label="ניווט ראשי"><a href="#listings">נכסים</a><a href="#services">שירותי תיווך</a><a href="#guides">מדריכים</a><a href="/valuation.html">הערכת שווי</a><a href="#tools">מחשבונים ומסמכים</a></nav>
       <a class="mobile-tools" href="#tools" aria-label="מחשבונים ומסמכים"><svg class="icon" aria-hidden="true"><use href="#calculator"/></svg><span>כלים</span></a>
       <button class="button outline header-contact" type="button" data-contact><svg class="icon"><use href="#chat"/></svg>יצירת קשר</button>
     </div>
@@ -128,7 +128,7 @@
         <div class="section-head">
           <div>
             <h2 id="listings-title" tabindex="-1">נכסים לדוגמה</h2>
-            <p class="section-caption">הנכסים, המחירים והתמונות משמשים להמחשת האבטיפוס.</p>
+            <p class="section-caption">הנכסים המסומנים "לדוגמה" מוצגים להמחשה בלבד.</p>
           </div>
           <label class="sort"><span>מיון לפי</span><select id="sort"><option value="featured">סדר ברירת מחדל</option><option value="low">מחיר מהנמוך לגבוה</option><option value="high">מחיר מהגבוה לנמוך</option><option value="area">שטח מהגדול לקטן</option><option value="recent">נכסים חדשים תחילה</option></select></label>
         </div>
@@ -155,15 +155,17 @@
           <span class="empty-icon"><svg class="icon"><use href="#search"/></svg></span>
           <h3 id="empty-title">אין נכסים שתואמים לחיפוש</h3>
           <p>אפשר לשנות את הסינון או לספר לנו מה אתם מחפשים.</p>
-          <div class="action-row"><button class="button outline" type="button" id="empty-reset">הצגת כל הנכסים</button><button class="button primary" type="button" data-contact="buy" id="no-results-inquiry">בקשת התאמת נכס</button></div>
+          <div class="action-row"><button class="button outline" type="button" id="empty-reset">הצגת כל הנכסים</button><button class="button primary" type="button" data-contact="alert" id="no-results-inquiry">עדכנו אותי כשיעלה נכס מתאים</button></div>
         </div>
+        <div class="alert-band"><div><h3>לא מצאתם בדיוק מה שחיפשתם?</h3><p>השאירו פרטים, ונעדכן אתכם ראשונים כשיעלה נכס שמתאים לחיפוש - עוד לפני שהוא מתפרסם בכל מקום.</p></div>
+          <button class="button primary" type="button" data-contact="alert" id="alert-me">עדכנו אותי</button></div>
         <noscript>יש להפעיל JavaScript כדי להשתמש בחיפוש ובטופס הפנייה.</noscript>
       </section>
       <section class="pathways" id="services" aria-labelledby="services-title">
         <h2 id="services-title">איך אפשר לעזור?</h2>
         <div class="path-grid">
           <article><h3>לקנות נכס</h3><p>ספרו לנו באיזה אזור אתם מחפשים, מה התקציב ומה חשוב לכם בבית הבא.</p><button type="button" class="button outline" data-contact="buy">בקשת התאמת נכס לקנייה</button></article>
-          <article><h3>למכור נכס</h3><p>השאירו פרטים לשיחה על הנכס, עסקאות דומות והדרך לשווק אותו.</p><button type="button" class="button outline" data-contact="sell">שיחה על מכירת נכס</button></article>
+          <article><h3>למכור נכס</h3><p>השאירו פרטים לשיחה על הנכס, עסקאות דומות והדרך לשווק אותו.</p><button type="button" class="button outline" data-contact="sell">שיחה על מכירת נכס</button><a class="text-link" href="/valuation.html">כמה שווה הנכס שלי? ←</a></article>
           <article><h3>לשכור נכס</h3><p>ציינו את היישוב הרצוי ואת מועד הכניסה, כדי למקד את החיפוש.</p><button type="button" class="button outline" data-contact="rent">בקשת התאמת נכס להשכרה</button></article>
           <article><h3>להשכיר נכס</h3><p>ספרו לנו על הנכס, על מועד הזמינות ועל תנאי ההשכרה.</p><button type="button" class="button outline" data-contact="let">שיחה על שיווק נכס להשכרה</button></article>
         </div>
@@ -171,7 +173,7 @@
       <section class="areas" id="areas" aria-labelledby="areas-title">
         <div>
           <h2 id="areas-title">חיפוש לפי אזור</h2>
-          <p>בחרו יישוב כדי לראות נכסים לדוגמה באזור.</p>
+          <p>בחרו יישוב כדי לראות נכסים, מידע על האזור ודרכים ליצירת קשר.</p>
         </div>
         <div id="town-links" class="town-links"></div>
       </section>
@@ -255,7 +257,7 @@
       <div class="footer-links footer-socials" role="group" aria-label="שפע נדל״ן ברשת">
         <a href="https://share.google/P9E39fvMwJgbxsasg">גוגל</a><a href="https://www.facebook.com/ShefaNadlan/">פייסבוק</a><a href="https://www.instagram.com/shefanadlan/">אינסטגרם</a>
       </div>
-      <span>אבטיפוס פרטי להמחשה</span>
+      <span>© שפע נדל״ן · וילדורף יזמות בע״מ</span>
     </div>
   </footer>
   <p id="page-status" class="sr-only" role="status" aria-atomic="true"></p>

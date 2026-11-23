@@ -1,5 +1,5 @@
 import {mkdir, readFile, writeFile} from "node:fs/promises";
-import {properties, dealNames} from "./dist/listings.mjs";
+import {properties, dealNames, towns, townSlugs} from "./dist/listings.mjs";
 import {propertyUrl} from "./dist/engagement.mjs";
 
 const root = new URL("./dist/", import.meta.url);
@@ -15,7 +15,7 @@ const escaped = value => String(value).replace(/[&<>"']/g, char => ({"&":"&amp;"
 const number = new Intl.NumberFormat("he-IL");
 const icon = name => `<svg class="icon" aria-hidden="true"><use href="#${name}"/></svg>`;
 
-function layout({path, title, description, contents, image}) {
+function layout({path, title, description, contents, image, head = ""}) {
   const url = new URL(path, origin);
   return `<!doctype html>
 <html lang="he" dir="rtl">
@@ -37,14 +37,14 @@ function layout({path, title, description, contents, image}) {
   <link rel="stylesheet" href="/styles.css?v=10">
   <script type="module" src="/page.mjs?v=10"></script>
   <script type="module" src="/site-tools.mjs"></script>
-</head>
+${head}</head>
 <body data-site-tools="public">
 ${symbols}
 <a class="skip" href="#content">דילוג לתוכן הראשי</a>
 <header class="header">
   <div class="wrap header-inner">
     ${brand}
-    <nav aria-label="ניווט ראשי"><a href="/#listings">נכסים</a><a href="/#services">שירותי תיווך</a><a href="/#guides">מדריכים</a></nav>
+    <nav aria-label="ניווט ראשי"><a href="/#listings">נכסים</a><a href="/#services">שירותי תיווך</a><a href="/#guides">מדריכים</a><a href="/valuation.html">הערכת שווי</a></nav>
     <a class="mobile-tools" href="/#tools" aria-label="מחשבונים ומסמכים">${icon("calculator")}<span>כלים</span></a>
     <button type="button" class="button outline header-contact" data-contact>יצירת קשר</button>
   </div>
@@ -125,7 +125,7 @@ function propertyPage(property) {
         <p id="share-result" class="section-caption"></p>
         <div id="share-box" hidden><label class="field"><span>קישור לעמוד הנכס</span><input id="share-address" type="url" readonly dir="ltr"></label></div>
         <div class="card-contacts"><button class="card-chat" type="button" data-whatsapp-property="${property.id}">WhatsApp על הנכס</button><a href="tel:+972527504034">שרל <bdi>052-7504034</bdi></a><a href="tel:+972527504037">רועי <bdi>052-7504037</bdi></a></div>
-        <p class="detail-note">הקישור מיועד למי שכבר מורשה להיכנס לאבטיפוס.</p>
+        <p class="detail-note">נכס לדוגמה: הפרטים, המחיר והתמונה מוצגים להמחשה בלבד.</p>
       </aside>
         <section class="content-card property-specs"><h2>פרטי הנכס</h2>
           <dl class="property-facts"><div><dt>סוג נכס</dt><dd>${escaped(property.type)}</dd></div><div><dt>חדרים</dt><dd>${property.rooms}</dd></div><div><dt>שטח</dt><dd>${property.area} מ״ר</dd></div></dl>
@@ -147,16 +147,104 @@ function guidePage(guide) {
   </article>`});
 }
 
+
+// ---------- Area pages (/areas/<slug>.html) ----------
+const areaIntro = {
+  "גדרה": "המשרד של שפע נדל״ן נמצא בגדרה, ומכאן אנחנו מכירים מקרוב את השכונות, את סוגי הבנייה ואת קצב העסקאות בעיר - מדירות בבניינים חדשים ועד בתים צמודי קרקע.",
+  "יבנה": "יבנה שוכנת בשפלה הקרובה לחוף, בין רחובות לאשדוד, ומשלבת שכונות ותיקות עם אזורי בנייה חדשים. אנחנו מלווים קונים, מוכרים, שוכרים ומשכירים בעיר.",
+  "בני עי״ש": "בני עי״ש היא מועצה מקומית הצמודה לגדרה, במרחק קצר מהמשרד שלנו. היא מתאימה למי שמחפש אווירה קהילתית לצד קרבה לשירותי העיר.",
+  "מזכרת בתיה": "מזכרת בתיה היא מושבה ותיקה מימי העלייה הראשונה, סמוכה לרחובות ולגדרה, עם שילוב של בתים צמודי קרקע ושכונות חדשות יותר.",
+  "קריית עקרון": "קריית עקרון היא מועצה מקומית בין רחובות למזכרת בתיה. אנחנו עוזרים למשפחות ולמשקיעים לבחון בה דירות ובתים למכירה ולהשכרה.",
+  "גן יבנה": "גן יבנה היא מועצה מקומית בין יבנה לאשדוד, עם הרבה בנייה צמודת קרקע ושכונות חדשות. אנחנו מלווים עסקאות מכר ושכירות ביישוב.",
+  "רחובות": "רחובות היא עיר מרכזית בשפלה, ובה מכון ויצמן למדע והפקולטה לחקלאות של האוניברסיטה העברית. אנחנו מלווים קונים, מוכרים ומשכירים בשכונות העיר.",
+  "יישובי גדרות": "המועצה האזורית גדרות כוללת יישובים כפריים סמוכים לגדרה. הביקוש בהם לבתים צמודי קרקע ולמגרשים מצריך היכרות עם התנאים של כל יישוב, ואנחנו כאן כדי לעזור.",
+  "אשדוד": "אשדוד היא עיר נמל גדולה לחוף הים, עם מגוון רחב של שכונות - מאזורים ותיקים ועד רובעים חדשים. אנחנו מלווים עסקאות מכר והשכרה בעיר.",
+  "אשקלון": "אשקלון היא עיר חוף בדרום מישור החוף, עם שכונות ותיקות ופרויקטים חדשים. אנחנו עוזרים לקונים, למשקיעים ולבעלי נכסים בעיר.",
+  "קריית גת": "קריית גת היא עיר בחבל לכיש, ובה אזור תעשייה גדול. אנחנו מלווים רוכשים, משקיעים ובעלי נכסים בעסקאות מכר ושכירות בעיר.",
+  "ראשון לציון": "ראשון לציון היא אחת הערים הגדולות בישראל ומהמושבות הראשונות שנוסדו בארץ. אנחנו מלווים עסקאות מכר ושכירות בשכונות העיר.",
+  "בת ים": "בת ים היא עיר חוף הסמוכה לתל אביב-יפו, עם ביקוש ערים לדירות להשכרה ולמכירה. אנחנו עוזרים לבעלי נכסים, לשוכרים ולקונים בעיר.",
+  "תל אביב": "תל אביב-יפו היא המרכז העסקי והתרבותי של ישראל. יש לנו נכסים גם בתל אביב, ואנחנו מלווים בה עסקאות מכר ושכירות.",
+};
+const areaFaq = town => [
+  [`איך מתחילים לחפש דירה ב${town}?`, `קבעו תקציב, מספר חדרים ומאפיינים שאי אפשר לוותר עליהם, ושלחו לנו את הפרטים. נחזור אליכם עם נכסים מתאימים ב${town} ובסביבה, ונעדכן כשיעלו נכסים חדשים.`],
+  [`איך יודעים אם המחיר של נכס ב${town} הוגן?`, `השוו לעסקאות שנחתמו באזור בתקופה האחרונה, בשטח ובמאפיינים דומים. אפשר לבדוק עסקאות במאגר הרשמי של רשות המסים, ואנחנו נשמח לעזור לקרוא את הנתונים.`],
+  [`רוצה למכור או להשכיר נכס ב${town} - מה הצעד הראשון?`, `בקשו הערכת שווי. נבחן את הנכס מול עסקאות דומות, נציע מחיר שיווק ונסביר איך נשווק אותו. השיחה הראשונה ללא התחייבות.`],
+  ["איך עובדים דמי התיווך?", "לפני שמתחילים, חותמים על הזמנת שירותי תיווך בכתב, שבה מופיעים דמי התיווך ותנאי ההתקשרות - כפי שנדרש בחוק המתווכים. כך הכול ברור מראש."],
+];
+function areaPage(town) {
+  const slug = townSlugs[town];
+  const title = `נדל״ן ב${town}: דירות ובתים למכירה ולהשכרה`;
+  const description = `תיווך נדל״ן ב${town}: דירות ובתים למכירה ולהשכרה, הערכת שווי לנכס וליווי אישי של שפע נדל״ן.`;
+  const others = towns.filter(other => other !== town).map(other => `<a href="/areas/${townSlugs[other]}.html">${escaped(other)}</a>`).join("");
+  const crumbs = {"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:[
+    {"@type":"ListItem",position:1,name:"דף הבית",item:new URL("/", origin).href},
+    {"@type":"ListItem",position:2,name:`נדל״ן ב${town}`,item:new URL(`/areas/${slug}.html`, origin).href}]};
+  return layout({path: `/areas/${slug}.html`, title, description, image: "/media/hero.webp",
+    head: `  <script type="module" src="/area.mjs?v=1"></script>\n  <script type="application/ld+json">${JSON.stringify(crumbs)}</script>\n`,
+    contents: `
+  <nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/">דף הבית</a><span aria-hidden="true">/</span><a href="/#areas">אזורים</a><span aria-hidden="true">/</span><span aria-current="page">${escaped(town)}</span></nav>
+  <article class="area-page">
+    <h1>${escaped(title)}</h1>
+    <p class="reading-lead">${escaped(areaIntro[town])}</p>
+    <div class="action-row">
+      <button class="button primary" type="button" data-contact="alert" data-prefill-town="${escaped(town)}">עדכנו אותי על נכס ב${escaped(town)}</button>
+      <a class="button outline" href="/valuation.html?town=${encodeURIComponent(town)}">כמה שווה הנכס שלי ב${escaped(town)}?</a>
+    </div>
+    <section aria-labelledby="area-listings-title">
+      <h2 id="area-listings-title">נכסים ב${escaped(town)}</h2>
+      <p id="area-status" class="section-caption" role="status">טוען נכסים…</p>
+      <div id="area-listings" class="cards" data-town="${escaped(town)}"></div>
+    </section>
+    <section class="area-services" aria-labelledby="area-services-title">
+      <h2 id="area-services-title">איך נוכל לעזור לכם ב${escaped(town)}</h2>
+      <div class="path-grid">
+        <article><h3>לקנות</h3><p>נאתר נכסים לפי התקציב והצרכים שלכם, ונעדכן ראשונים כשעולה נכס מתאים.</p><button type="button" class="button outline" data-contact="buy" data-prefill-town="${escaped(town)}">בקשת התאמת נכס</button></article>
+        <article><h3>למכור</h3><p>הערכת שווי מול עסקאות דומות, צילום, שיווק וליווי עד החתימה.</p><a class="button outline" href="/valuation.html?town=${encodeURIComponent(town)}">הערכת שווי לנכס</a></article>
+        <article><h3>לשכור</h3><p>ספרו לנו על מועד הכניסה והתקציב, ונמקד את החיפוש בשבילכם.</p><button type="button" class="button outline" data-contact="rent" data-prefill-town="${escaped(town)}">בקשת דירה להשכרה</button></article>
+        <article><h3>להשכיר</h3><p>נעזור לקבוע מחיר שכירות, לשווק את הנכס ולמצוא שוכרים מתאימים.</p><button type="button" class="button outline" data-contact="let" data-prefill-town="${escaped(town)}">שיחה על השכרת נכס</button></article>
+      </div>
+    </section>
+    <section class="reading-page area-faq" aria-labelledby="area-faq-title">
+      <h2 id="area-faq-title">שאלות נפוצות</h2>
+      ${areaFaq(town).map(([q, a]) => `<details><summary>${escaped(q)}</summary><p>${escaped(a)}</p></details>`).join("\n      ")}
+    </section>
+    <nav class="area-others" aria-label="אזורים נוספים"><h2>אזורים נוספים שאנחנו עובדים בהם</h2><div class="town-links">${others}</div></nav>
+  </article>`});
+}
+
+// ---------- Valuation page ----------
+const valuationPage = layout({
+  path: "/valuation.html",
+  title: "כמה שווה הדירה שלי? הערכת שווי לנכס",
+  description: "רוצים לדעת כמה שווה הדירה או הבית שלכם? השאירו פרטים וקבלו הערכת שווי מבוססת עסקאות באזור משפע נדל״ן - בלי התחייבות.",
+  image: "/media/hero.webp",
+  head: `  <script type="module" src="/valuation.mjs?v=1"></script>\n`,
+  contents: `
+  <nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/">דף הבית</a><span aria-hidden="true">/</span><span aria-current="page">הערכת שווי</span></nav>
+  <article class="reading-page valuation-page">
+    <h1>כמה שווה הנכס שלכם?</h1>
+    <p class="reading-lead">ספרו לנו כמה פרטים על הדירה או הבית, ונחזור אליכם עם הערכת מחיר מבוססת עסקאות שנחתמו באזור - בלי עלות ובלי התחייבות.</p>
+    <div class="action-row"><button class="button primary" type="button" data-contact="valuation" id="valuation-start">לקבלת הערכת שווי</button>
+      <a class="button outline" href="tel:+972527504034">או התקשרו: <bdi>052-7504034</bdi></a></div>
+    <section><h2>מה כוללת הערכת השווי?</h2><ul>
+      <li>השוואה לעסקאות מכר או שכירות שנחתמו באזור, בנכסים דומים בשטח ובמאפיינים.</li>
+      <li>טווח מחיר מומלץ לשיווק, והסבר מה מעלה ומה מוריד את המחיר של הנכס שלכם.</li>
+      <li>תוכנית שיווק: צילום, פרסום, סיורים וליווי עד החתימה.</li>
+    </ul></section>
+    <section><h2>חשוב לדעת</h2><p>הערכת השווי היא חוות דעת מקצועית של משרד תיווך ואינה שמאות מקרקעין. לצורך משכנתא, ירושה או הליך משפטי יש לפנות לשמאי מקרקעין מוסמך.</p></section>
+  </article>`,
+});
+
 const accessibilityPage = layout({
   path: "/accessibility.html",
   title: "הצהרת נגישות",
-  description: "התאמות הנגישות באבטיפוס שפע נדל״ן, ודרך לדווח על בעיית נגישות.",
+  description: "התאמות הנגישות באתר שפע נדל״ן, ודרך לדווח על בעיית נגישות.",
   contents: `
   <nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/">דף הבית</a><span aria-hidden="true">/</span><span aria-current="page">נגישות</span></nav>
   <article class="reading-page">
     <h1>הצהרת נגישות</h1>
     <p class="reading-lead">שפע נדל״ן פועלת להנגיש את האתר ואת שירותי המשרד לאנשים עם מוגבלות.</p>
-    <p><strong>טיוטה לגרסת הבדיקה הפרטית.</strong> עדכון אחרון <time datetime="2026-11-16">16 בנובמבר 2026</time>.</p>
+    <p>עדכון אחרון <time datetime="2026-11-23">23 בנובמבר 2026</time>.</p>
     <section><h2>שימוש באתר</h2><ul>
       <li>אפשר לדלג מהחלק העליון של העמוד לתוכן הראשי.</li>
       <li>קישורים וכפתורים מציגים סימון מיקוד במעבר באמצעות Tab. אפשר לסגור חלונות באמצעות Escape.</li>
@@ -169,10 +257,12 @@ const accessibilityPage = layout({
   </article>`,
 });
 
-await Promise.all(["properties/", "guides/"].map(dir => mkdir(new URL(dir, root), {recursive: true})));
+await Promise.all(["properties/", "guides/", "areas/"].map(dir => mkdir(new URL(dir, root), {recursive: true})));
 for (const property of properties) await writeFile(new URL(propertyUrl(property.id).slice(1), root), propertyPage(property));
 for (const guide of guides) await writeFile(new URL(`guides/${guide.slug}.html`, root), guidePage(guide));
 await writeFile(new URL("accessibility.html", root), accessibilityPage);
+for (const town of towns) await writeFile(new URL(`areas/${townSlugs[town]}.html`, root), areaPage(town));
+await writeFile(new URL("valuation.html", root), valuationPage);
 
 const listingLinks = properties.map(property => `<article class="card static-listing"><h3><a href="${propertyUrl(property.id)}">${escaped(property.title)}</a></h3><p>${escaped(property.town)} · ${dealNames[property.deal]} · נכס לדוגמה</p></article>`).join("\n          ");
 const linkedHome = home.replace(/<!-- BEGIN LISTING LINKS -->[\s\S]*?<!-- END LISTING LINKS -->/, `<!-- BEGIN LISTING LINKS -->\n          ${listingLinks}\n        <!-- END LISTING LINKS -->`);

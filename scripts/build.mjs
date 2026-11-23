@@ -43,7 +43,7 @@ if (import.meta.url===new URL(process.argv[1],`file://${process.cwd()}/`).href) 
     migrations.push({name,sql:await readFile(new URL(name,migrationDir),"utf8")});
   }
   const standalone=await build({
-    stdin:{contents:`import {makeWorker} from "./worker/index.mjs"; import {withSiteAuth} from "./worker/site-auth.mjs"; export default withSiteAuth(makeWorker(${JSON.stringify(assets)}),{migrations:${JSON.stringify(migrations)},guides:${JSON.stringify(Object.keys(assets).filter(key=>key.startsWith("/guides/")))}});`,
+    stdin:{contents:`import {makeWorker} from "./worker/index.mjs"; import {withSiteAuth} from "./worker/site-auth.mjs"; export default withSiteAuth(makeWorker(${JSON.stringify(assets)}),{migrations:${JSON.stringify(migrations)},guides:${JSON.stringify(Object.keys(assets).filter(key=>/^\/(guides|areas)\//.test(key)||key==="/valuation.html"))}});`,
       resolveDir:fileURLToPath(root),sourcefile:"standalone-worker.mjs"},
     format:"esm",bundle:true,platform:"browser",target:"es2022",minify:true,write:false,
   });

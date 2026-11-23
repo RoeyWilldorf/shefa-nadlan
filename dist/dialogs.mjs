@@ -14,6 +14,8 @@ const labels = {
   let: "בקשת שיחה על שיווק נכס להשכרה",
   invest: "בקשת שיחה על נכס להשקעה",
   access: "דיווח על בעיית נגישות",
+  valuation: "כמה שווה הנכס שלי? בקשת הערכת שווי",
+  alert: "עדכנו אותי כשיעלה נכס מתאים",
 };
 const localities = towns.map(town => `<option>${town}</option>`).join("");
 const lookup = id => properties.find(property => property.id === id);
@@ -24,8 +26,9 @@ function field(name, label, attributes) {
 }
 
 function inquiryMarkup(intent, property) {
-  const owner = intent === "sell" || intent === "let";
-  const search = ["buy", "rent", "invest"].includes(intent);
+  const valuation = intent === "valuation";
+  const owner = intent === "sell" || intent === "let" || valuation;
+  const search = ["buy", "rent", "invest", "alert"].includes(intent);
   const feedback = intent === "access";
   return `<div class="dialog-content dialog-form">
     <h2 id="dialog-title" tabindex="-1">${labels[intent]}</h2>
@@ -36,6 +39,10 @@ function inquiryMarkup(intent, property) {
       ${field("name", "שם מלא (חובה)", 'required maxlength="80" autocomplete="name"')}
       ${field("phone", "טלפון לחזרה (חובה)", 'required type="tel" maxlength="25" autocomplete="tel" inputmode="tel" dir="ltr"')}
       ${owner || search ? `<label class="field"><span>יישוב${owner ? " הנכס" : " מועדף"} (רשות)</span><select name="town"><option value="">לבחירת יישוב</option>${localities}<option>יישוב אחר</option></select></label>` : ""}
+      ${intent === "alert" ? '<label class="field"><span>מה אתם מחפשים?</span><select name="alertDeal"><option value="buy">קנייה</option><option value="rent">שכירות</option></select></label>' : ""}
+      ${valuation ? '<label class="field"><span>מה תרצו לעשות עם הנכס?</span><select name="valuationDeal"><option value="sell">למכור</option><option value="let">להשכיר</option><option value="">עוד לא החלטתי - רק לדעת כמה הוא שווה</option></select></label>' : ""}
+      ${search || valuation ? '<label class="field"><span>מספר חדרים' + (valuation ? '' : ' (מינימום)') + ' (רשות)</span><select name="rooms"><option value="">לבחירה</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></label>' : ""}
+      ${valuation ? '<label class="field"><span>שטח במ״ר (רשות)</span><input name="area" type="text" inputmode="numeric" maxlength="6"></label><label class="field"><span>רחוב וקומה (רשות)</span><input name="street" maxlength="80" autocomplete="street-address"></label>' : ""}
       ${search ? '<label class="field"><span>תקציב בשקלים (רשות)</span><input name="budget" type="text" inputmode="numeric" maxlength="14"></label>' : ""}
       ${intent === "rent" || intent === "let" ? '<label class="field"><span>מועד כניסה (רשות)</span><input name="move-in" type="date"></label>' : ""}
       ${owner ? '<label class="field"><span>סוג הנכס (רשות)</span><select name="type"><option value="">לבחירת סוג</option><option>דירה</option><option>בית פרטי</option><option>נכס מסחרי</option><option>אחר</option></select></label>' : ""}
@@ -82,6 +89,13 @@ export function initDialogs() {
   function showInquiry(intent, property, trigger) {
     show("inquiry", inquiryMarkup(intent, property), trigger);
     const form = body.querySelector("form");
+    // Values passed from the page (search filters, city pages): data-prefill-town / -budget / -rooms / -deal
+    for (const [key, value] of Object.entries(trigger?.dataset ?? {})) {
+      if (!key.startsWith("prefill") || !value) continue;
+      const name = {Town:"town",Budget:"budget",Rooms:"rooms",Deal:intent==="alert"?"alertDeal":"valuationDeal"}[key.slice(7)];
+      const field = name && form.elements[name];
+      if (field && (field.tagName !== "SELECT" || [...field.options].some(option => (option.value || option.text) === value))) field.value = value;
+    }
     const alert = form.querySelector("#inquiry-error");
     const inputs = [...form.querySelectorAll("[required]")];
     for (const input of inputs) input.addEventListener("input", () => fieldError(input, ""));
@@ -109,8 +123,18 @@ export function initDialogs() {
       const submit=form.querySelector("button[type=submit]");
       submit.disabled=true;
       try {
+        let sentIntent=intent, message=values.message??"";
+        if(intent==="valuation"){
+          sentIntent=values.valuationDeal||"sell";
+          message=["בקשת הערכת שווי לנכס",values.valuationDeal===""?"(עדיין לא הוחלט אם למכור או להשכיר)":"",values.street&&`רחוב/קומה: ${values.street}`,message].filter(Boolean).join("\n");
+        }
+        if(intent==="alert"){
+          sentIntent=values.alertDeal==="rent"?"rent":"buy";
+          message=["ביקש/ה עדכון כשיעלה נכס מתאים",message].filter(Boolean).join("\n");
+        }
+        const area=values.area?Number(String(values.area).replace(/[^\d.]/g,""))||null:null;
         const response=await fetch("/api/inquiries",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-          ...values,budget,moveIn:values["move-in"],consent:true,intent,propertyId:property?.id,requestId,source:new URLSearchParams(location.search).get("utm_source"),
+          ...values,budget,area,rooms:values.rooms||null,message,moveIn:values["move-in"],consent:true,intent:sentIntent,propertyId:property?.id,requestId,source:new URLSearchParams(location.search).get("utm_source"),
         })});
         const result=await response.json();
         if(!response.ok) throw Error(result.error??"הפנייה לא נקלטה.");

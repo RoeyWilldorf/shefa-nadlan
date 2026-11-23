@@ -1,4 +1,4 @@
-import {towns, types, properties, dealNames, parsePrice, filterProperties} from "./listings.mjs";
+import {towns, townSlugs, types, properties, dealNames, parsePrice, filterProperties} from "./listings.mjs";
 
 import {initDialogs} from "./dialogs.mjs?v=11";
 import {bindEngagement, isSaved, propertyUrl, syncSavedControls} from "./engagement.mjs";
@@ -97,7 +97,14 @@ function renderResults() {
   const sampleOnly=!properties.some(p=>p.publishedAt);
   count.textContent = results.length === 1 ? `נמצא נכס אחד${sampleOnly?" לדוגמה":""}` : `נמצאו ${results.length} נכסים${sampleOnly?" לדוגמה":""}`;
   empty.hidden = Boolean(results.length);
-  document.querySelector("#no-results-inquiry").dataset.contact = filters.deal === "rent" ? "rent" : "buy";
+  document.querySelector("#no-results-inquiry").dataset.contact = "alert";
+  // "Notify me" carries the current search into the request form.
+  for (const button of document.querySelectorAll("#no-results-inquiry, #alert-me")) {
+    button.dataset.prefillDeal = filters.deal === "rent" ? "rent" : "buy";
+    button.dataset.prefillTown = filters.town || "";
+    button.dataset.prefillRooms = filters.rooms || "";
+    button.dataset.prefillBudget = max ? String(max) : "";
+  }
   document.querySelector("#empty-title").textContent = savedFilter.getAttribute("aria-pressed") === "true"
     ? "אין נכסים שמורים בתוצאות" : "אין נכסים שתואמים לחיפוש";
   return true;
@@ -138,17 +145,11 @@ document.querySelector("#empty-reset").addEventListener("click", () => {
 
 const townLinks = document.querySelector("#town-links");
 for (const town of towns) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.innerHTML = `${icon("pin")}<span></span>`;
-  button.querySelector("span").textContent = town;
-  button.addEventListener("click", () => {
-    clearFilters();
-    filterField("town").value = town;
-    renderResults();
-    goToResults();
-  });
-  townLinks.append(button);
+  const link = document.createElement("a");
+  link.href = `/areas/${townSlugs[town]}.html`;
+  link.innerHTML = `${icon("pin")}<span></span>`;
+  link.querySelector("span").textContent = town;
+  townLinks.append(link);
 }
 
 savedFilter.addEventListener("click", () => {

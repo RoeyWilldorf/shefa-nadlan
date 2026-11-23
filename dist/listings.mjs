@@ -1,5 +1,9 @@
 export const towns = ["גדרה", "יבנה", "בני עי״ש", "מזכרת בתיה", "קריית עקרון", "גן יבנה", "רחובות", "יישובי גדרות",
   "אשדוד", "אשקלון", "קריית גת", "ראשון לציון", "בת ים", "תל אביב"];
+// Address of each town's area page (/areas/<slug>.html).
+export const townSlugs = {"גדרה":"gedera","יבנה":"yavne","בני עי״ש":"bnei-ayish","מזכרת בתיה":"mazkeret-batya","קריית עקרון":"kiryat-ekron",
+  "גן יבנה":"gan-yavne","רחובות":"rehovot","יישובי גדרות":"gderot","אשדוד":"ashdod","אשקלון":"ashkelon","קריית גת":"kiryat-gat",
+  "ראשון לציון":"rishon-lezion","בת ים":"bat-yam","תל אביב":"tel-aviv"};
 export const types = ["דירה", "בית פרטי", "דירת גן", "פנטהאוז"];
 export const dealNames = {sale: "למכירה", rent: "להשכרה"};
 

@@ -81,3 +81,42 @@ test("AI copy is owner-only and uses only the property's facts",async()=>{
   assert.ok(!prompt.includes("רחוב סודי")&&!prompt.includes("0501234567"),"private details must not reach the AI");
   delete env.AI;
 });
+
+test("office gets an email for a new lead and for leads matching a newly published property",async()=>{
+  const sent=[];
+  const realFetch=globalThis.fetch;
+  globalThis.fetch=async(url,init)=>{ if(String(url).startsWith("https://api.resend.com")){sent.push(JSON.parse(init.body));return new Response("{}",{status:200});} return realFetch(url,init); };
+  env.RESEND_API_KEY="re_test"; env.NOTIFY_EMAIL="office@example.com";
+  const waits=[]; const ctx={waitUntil:p=>waits.push(p)};
+  const fetchSite=(path,init={})=>site.fetch(new Request(origin+path,{redirect:"manual",...init}),env,ctx);
+  try {
+    const lead=await fetchSite("/api/inquiries",{method:"POST",headers:{Origin:origin,"Content-Type":"application/json"},
+      body:JSON.stringify({name:"דנה כהן",phone:"0541234567",intent:"buy",town:"רחובות",budget:3000000,rooms:"4",consent:true,message:"ביקש/ה עדכון כשיעלה נכס מתאים"})});
+    assert.equal(lead.status,201);
+    await Promise.all(waits);
+    assert.equal(sent.length,1);
+    assert.match(sent[0].subject,/בקשה לעדכון על נכס · רחובות · דנה כהן/);
+    assert.ok(sent[0].html.includes("wa.me/972541234567"));
+
+    const login=await fetchSite("/login",{method:"POST",headers:{Origin:origin},body:new URLSearchParams({password:"correct horse"})});
+    const cookie=login.headers.get("set-cookie").split(";")[0];
+    const json={cookie,Origin:origin,"Content-Type":"application/json"};
+    const draft={title:"דירת 5 חדרים",town:"רחובות",neighborhood:"",price:2500000,deal:"sale",type:"דירה",status:"draft",rooms:5,area:120,
+      address:"x",owner:"y",ownerPhone:"0501234567",agent:"a",notes:"n",description:"תיאור"};
+    const {id}=await (await fetchSite("/api/office/properties",{method:"POST",headers:json,body:JSON.stringify(draft)})).json();
+    await Promise.all(waits.splice(0));
+    assert.equal(sent.length,1,"a draft property must not notify anyone");
+    const publish={...draft,status:"active",verified:true,approved:true,distinctProperty:true,version:1,changeReason:"פרסום הנכס באתר"};
+    assert.equal((await fetchSite(`/api/office/properties/${id}`,{method:"PUT",headers:json,body:JSON.stringify(publish)})).status,200);
+    await Promise.all(waits.splice(0));
+    assert.equal(sent.length,2);
+    assert.match(sent[1].subject,/מתאים ל-2 לקוחות/); // includes the earlier general buy lead
+    assert.ok(sent[1].html.includes("דנה כהן"));
+    const again={...publish,price:2490000,version:2,changeReason:"עדכון מחיר"};
+    await fetchSite(`/api/office/properties/${id}`,{method:"PUT",headers:json,body:JSON.stringify(again)});
+    await Promise.all(waits.splice(0));
+    assert.equal(sent.length,2,"each property notifies only once");
+  } finally {
+    globalThis.fetch=realFetch; delete env.RESEND_API_KEY; delete env.NOTIFY_EMAIL;
+  }
+});
