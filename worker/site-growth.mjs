@@ -129,14 +129,11 @@ function parseCopy(text) {
   const body=lines.join("\n").replace(/^(תוכן|גוף|body)\s*[:：]\s*/im,"").replace(/\*\*(.+?)\*\*/g,"$1").trim();
   return {title:title.slice(0,220),body:body.slice(0,9000)};
 }
-export async function aiCopy(env,data,loadProperty,origin) {
-  const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
-  if (!env.AI) return reply({error:"כתיבה עם AI עדיין לא הופעלה בשרת."},503);
-  const channel=Object.hasOwn(channelGuide,data?.channel)?data.channel:"site";
-  const tone=Object.hasOwn(toneGuide,data?.tone)?data.tone:"warm";
-  const response=await loadProperty();
-  if (!response.ok) return response;
-  const {property:p}=await response.json();
+// Writes marketing copy for one property with Workers AI. Returns {title,body,model} or null.
+export async function writeCopy(env,p,channel="site",tone="warm",origin="") {
+  if (!env.AI) return null;
+  channel=Object.hasOwn(channelGuide,channel)?channel:"site";
+  tone=Object.hasOwn(toneGuide,tone)?tone:"warm";
   const system=`אתה קופירייטר נדל״ן ישראלי מנוסה שכותב עבור משרד התיווך "שפע נדל״ן". כתוב בעברית תקנית, טבעית ושיווקית.
 כללים מחייבים:
 - השתמש אך ורק בעובדות שנמסרו. אסור להמציא פרטים (נוף, שיפוץ, קרבה למוסדות, תשואה, חניה וכד׳) שלא הופיעו.
@@ -155,13 +152,23 @@ ${facts(p)}`;
       const copy=parseCopy(result?.response??result?.result?.response);
       if (copy.title&&copy.body.length>15) {
         const live=["active","negotiation"].includes(p.status);
-        const link=live?`${origin}/listing/${p.id}?utm_source=${channel}&utm_medium=organic&utm_campaign=ai`:"";
+        const link=live&&origin?`${origin}/listing/${p.id}?utm_source=${channel}&utm_medium=organic&utm_campaign=ai`:"";
         if (link&&channel!=="story") copy.body+=`\n\n${link}`;
-        return reply({...copy,model});
+        return {...copy,model};
       }
       lastError=new Error("empty");
     } catch(error) { lastError=error; }
   }
   console.error("ai_copy_failed",lastError?.message);
-  return reply({error:"שירות ה-AI לא החזיר טקסט כרגע. נסו שוב בעוד רגע."},502);
+  return null;
+}
+
+export async function aiCopy(env,data,loadProperty,origin) {
+  const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
+  if (!env.AI) return reply({error:"כתיבה עם AI עדיין לא הופעלה בשרת."},503);
+  const response=await loadProperty();
+  if (!response.ok) return response;
+  const {property:p}=await response.json();
+  const copy=await writeCopy(env,p,data?.channel,data?.tone,origin);
+  return copy?reply(copy):reply({error:"שירות ה-AI לא החזיר טקסט כרגע. נסו שוב בעוד רגע."},502);
 }

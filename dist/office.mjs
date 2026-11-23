@@ -170,8 +170,30 @@ function workPage() {
   <div class="office-filters">${select("work-period","מועד",{"":"כל המועדים",today:"היום",tomorrow:"מחר",week:"7 הימים הקרובים",late:"באיחור"},"")}</div>
   <h2 class="sr-only">רשימת משימות וסיורים</h2><div id="work-list" class="office-list">${workList()}</div>`;
 }
+// ---- Facebook / Instagram publishing panel ----
+async function socialPanel() {
+  const box=byId("social-panel");
+  if(!box) return;
+  let data;
+  try { data=await api("social"); } catch(problem) { box.innerHTML=`<p class="office-error">${safe(problem.message)}</p>`; return; }
+  if(!box.isConnected) return;
+  const params=new URLSearchParams(location.search);
+  const notice=params.get("social")==="ok"?'<p class="office-success">✅ החשבון חובר בהצלחה.</p>':params.get("social")==="error"?`<p class="office-error">החיבור לא הושלם. ${safe(params.get("reason")||"נסו שוב.")}</p>`:"";
+  const posts=data.posts.length?`<details class="office-history"><summary>פרסומים אחרונים</summary><ul>${data.posts.map(p=>{const prop=state.properties.find(x=>x.id===p.property_id);return `<li>${p.network==="facebook"?"פייסבוק":"אינסטגרם"} · ${safe(prop?.title||"נכס")} · ${p.error?`<span class="office-error">נכשל: ${safe(p.error)}</span>`:"פורסם ✅"} · ${stamp(p.at)}</li>`;}).join("")}</ul></details>`:"";
+  if(!data.configured) box.innerHTML=`<h2>פרסום אוטומטי בפייסבוק ובאינסטגרם</h2><p class="office-small">כדי להפעיל צריך הגדרה חד-פעמית של אפליקציה בפייסבוק (FB_APP_ID ו-FB_APP_SECRET). אחרי ההגדרה יופיע כאן כפתור חיבור.</p>`;
+  else if(!data.connected) box.innerHTML=`<h2>פרסום אוטומטי בפייסבוק ובאינסטגרם</h2>${notice}<p class="office-small">חברו את עמוד הפייסבוק (וחשבון האינסטגרם העסקי שמקושר אליו). מרגע החיבור, כל נכס שמתפרסם באתר עם תמונה יפורסם גם ברשתות.</p>${actionRow('<a class="button primary" href="/office/social/connect">חיבור לפייסבוק ואינסטגרם</a>')}`;
+  else box.innerHTML=`<h2>פרסום אוטומטי בפייסבוק ובאינסטגרם</h2>${notice}
+    <p>מחובר לעמוד <b>${safe(data.page)}</b>${data.instagram?` ולאינסטגרם <b>@${safe(data.instagram)}</b>`:' · <span class="office-error">לא נמצא חשבון אינסטגרם עסקי מקושר לעמוד</span>'}</p>
+    ${data.pages.length>1?`<div class="office-fields">${select("social-page","עמוד לפרסום",Object.fromEntries(data.pages.map(p=>[p.id,p.name])),data.selected)}</div>`:""}
+    <label class="office-check"><input type="checkbox" name="social-auto" ${data.auto?"checked":""}> לפרסם אוטומטית כל נכס חדש שמתפרסם באתר (אחרי שעולה לו תמונה)</label>
+    ${posts}${actionRow('<a class="button outline" href="/office/social/connect">חיבור מחדש</a><button type="button" class="button outline" id="social-disconnect">ניתוק</button>')}`;
+  box.querySelector("[name=social-auto]")?.addEventListener("change",async event=>{await api("social",{method:"POST",data:{auto:event.target.checked}});status.textContent=event.target.checked?"הפרסום האוטומטי הופעל.":"הפרסום האוטומטי כובה.";});
+  box.querySelector("[name=social-page]")?.addEventListener("change",async event=>{await api("social",{method:"POST",data:{pageId:event.target.value}});socialPanel();});
+  byId("social-disconnect")?.addEventListener("click",async()=>{await api("social",{method:"POST",data:{disconnect:true}});socialPanel();});
+}
 function marketingPage() {
-  return `<section class="office-panel office-studio"><h2>הכנת מודעה מנכס קיים</h2><p class="office-small">אפשר להפיק, לערוך ולאשר נוסח לפי ערוץ. ההפצה מתבצעת ידנית לאחר העתקה.</p>
+  setTimeout(socialPanel);
+  return `<section class="office-panel" id="social-panel"><p>טוען הגדרות פרסום…</p></section><section class="office-panel office-studio"><h2>הכנת מודעה מנכס קיים</h2><p class="office-small">אפשר להפיק, לערוך ולאשר נוסח לפי ערוץ. ההפצה מתבצעת ידנית לאחר העתקה.</p>
   <form id="studio-form"><div class="office-fields">${select("propertyId","נכס",propertyOptions(),"",true)}${select("channel","ערוץ",channels,"site",true)}</div>
   ${actionRow('<button type="submit" class="button primary">הצגת נוסח</button>')}</form><div id="studio-draft"></div></section>`;
 }
@@ -501,7 +523,7 @@ async function studio(form) {
     ${select("status","מצב נוסח",{draft:"טיוטה",approved:"מאושר להפצה ידנית"},draft?.status??"draft")}
     ${area("body","תוכן הפרסום",withBrandContacts(suggested.body),10000)}
     </div><p class="office-error" role="alert" hidden></p>
-    ${actionRow('<button type="submit" class="button primary">שמירת נוסח</button><button type="button" class="button outline" id="copy-draft">העתקת נוסח</button>')}</form>
+    ${actionRow('<button type="submit" class="button primary">שמירת נוסח</button><button type="button" class="button outline" id="copy-draft">העתקת נוסח</button><button type="button" class="button outline" id="social-now">📣 פרסום עכשיו בפייסבוק ובאינסטגרם</button>')}</form>
     <section class="office-panel office-ai" aria-labelledby="ai-title"><h3 id="ai-title">כתיבה עם AI</h3>
     <p class="office-small">ה-AI כותב נוסח חדש לפי פרטי הנכס והערוץ שנבחר, ומכניס אותו לטופס למעלה לעריכה. הוא מנוסח רק מהעובדות שהוזנו בנכס - כדאי לעבור על הטקסט לפני פרסום.</p>
     <div class="office-fields">${select("ai-tone","סגנון",{warm:"חם ומזמין",luxury:"יוקרתי",investor:"למשקיעים",urgent:"הזדמנות"},"warm")}</div>
@@ -521,6 +543,19 @@ async function studio(form) {
       field.value=withBrandContacts(field.value);
       try {await navigator.clipboard.writeText(field.value);status.textContent="הנוסח הועתק.";}
       catch {field.focus();field.select();status.textContent="הנוסח סומן להעתקה.";}
+    });
+    byId("social-now").addEventListener("click",async event=>{
+      const button=event.currentTarget;button.disabled=true;status.textContent="מפרסם ברשתות…";
+      try {
+        const response=await fetch(`/api/office/properties/${propertyId}/social-post`,{method:"POST"});
+        const result=await response.json();
+        if(response.status===409) throw Error("קודם צריך לחבר את פייסבוק בחלק העליון של העמוד.");
+        if(result.skipped==="not_published") throw Error("אפשר לפרסם ברשתות רק נכס פעיל באתר.");
+        const lines=(result.results||[]).map(r=>`${r.network==="facebook"?"פייסבוק":"אינסטגרם"}: ${r.error?"נכשל - "+r.error:"פורסם ✅"}`);
+        status.textContent=lines.join(" · ")||"לא בוצע פרסום.";
+        socialPanel();
+      } catch(problem) {status.textContent=problem.message;}
+      finally {button.disabled=false;}
     });
     const aiButton=byId("ai-draft"),aiStatus=byId("ai-status");
     aiButton.addEventListener("click",async ()=>{

@@ -14,6 +14,7 @@
 import {robotsTxt,sitemapXml,aiCopy,aiCopyPath,notFoundPage,publicHtml,publicHeaders} from "./site-growth.mjs";
 import {notifyReady,sendEmail,leadEmail,notifyMatches} from "./site-notify.mjs";
 import {countView,statsReport} from "./site-stats.mjs";
+import {socialStatus,connectRedirect,connectCallback,updateSocial,publishProperty,autoPublish} from "./site-social.mjs";
 import {townSlugs} from "../dist/listings.mjs";
 const slugTowns=Object.fromEntries(Object.entries(townSlugs).map(([town,slug])=>[slug,town]));
 
@@ -252,6 +253,32 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
 
     if (path==="/robots.txt"&&method==="GET") return robotsTxt(url);
     if (path==="/sitemap.xml"&&method==="GET") return sitemapXml(url,guides,()=>inner("/api/catalog"));
+    // ---- Facebook / Instagram publishing ----
+    const forbidden=()=>new Response(JSON.stringify({error:"אזור המשרד זמין לבעל האתר לאחר התחברות."}),{status:403,headers:{"Content-Type":"application/json; charset=utf-8"}});
+    if (path==="/office/social/connect"&&method==="GET") {
+      if (!owner) return redirect("/login");
+      if (!env.FB_APP_ID||!env.FB_APP_SECRET) return redirect("/office#marketing");
+      const state=crypto.randomUUID();
+      return redirect(connectRedirect(env,url.origin,state),{"Set-Cookie":cookie("shefa_oauth",state,600,"Lax")});
+    }
+    if (path==="/office/social/callback"&&method==="GET") {
+      if (!owner) return redirect("/login");
+      const state=url.searchParams.get("state");
+      if (!state||state!==jar.shefa_oauth||!url.searchParams.get("code")) return redirect("/office?social=error#marketing");
+      try { await connectCallback(env,url.origin,url.searchParams.get("code")); return redirect("/office?social=ok#marketing",{"Set-Cookie":cookie("shefa_oauth","",0,"Lax")}); }
+      catch(error) { console.error("social_connect_failed",error.message); return redirect(`/office?social=error&reason=${encodeURIComponent(error.message.slice(0,150))}#marketing`); }
+    }
+    if (path==="/api/office/social") {
+      if (!owner) return forbidden();
+      if (method==="GET") return new Response(JSON.stringify(await socialStatus(env)),{headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
+      if (method==="POST"&&sameOrigin(request)) return updateSocial(env,await request.json().catch(()=>({})));
+    }
+    const socialPost=path.match(/^\/api\/office\/properties\/([0-9a-f-]{36})\/social-post$/i);
+    if (socialPost&&method==="POST") {
+      if (!owner||!sameOrigin(request)) return forbidden();
+      const result=await publishProperty(env,socialPost[1],()=>inner(`/api/office/properties/${socialPost[1]}`),url.origin,{force:true});
+      return new Response(JSON.stringify(result),{status:result.skipped==="not_connected"?409:200,headers:{"Content-Type":"application/json; charset=utf-8"}});
+    }
     if (path==="/api/office/site-stats"&&method==="GET") {
       if (!owner) return new Response(JSON.stringify({error:"אזור המשרד זמין לבעל האתר לאחר התחברות."}),{status:403,headers:{"Content-Type":"application/json; charset=utf-8"}});
       const days=[7,30,90].includes(Number(url.searchParams.get("days")))?Number(url.searchParams.get("days")):30;
@@ -274,11 +301,14 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
     if (inquiryText!==null&&response.status===201) {
       try { const {subject,html}=leadEmail(JSON.parse(inquiryText),url.origin); later(sendEmail(env,subject,html)); } catch {}
     }
-    const savedProperty=owner&&notifyReady(env)&&response.ok&&path.match(/^\/api\/office\/properties(?:\/([0-9a-f-]{36}))?$/i);
+    const savedProperty=owner&&response.ok&&path.match(/^\/api\/office\/properties(?:\/([0-9a-f-]{36}))?$/i);
     if (savedProperty&&(method==="POST"||method==="PUT")) {
       const id=savedProperty[1]||(await response.clone().json().catch(()=>({}))).id;
-      if (id) later(notifyMatches(env,id,()=>inner("/api/office/state"),url.origin));
+      if (id&&notifyReady(env)) later(notifyMatches(env,id,()=>inner("/api/office/state"),url.origin));
+      if (id) later(autoPublish(env,id,()=>inner(`/api/office/properties/${id}`),url.origin));
     }
+    const uploaded=owner&&response.status===201&&method==="POST"&&url.searchParams.get("public")==="1"&&path.match(/^\/api\/office\/properties\/([0-9a-f-]{36})\/files$/i);
+    if (uploaded) later(autoPublish(env,uploaded[1],()=>inner(`/api/office/properties/${uploaded[1]}`),url.origin));
 
     const type=response.headers.get("content-type")||"";
     if (response.status===404&&(method==="GET"||method==="HEAD")&&!path.startsWith("/api/")&&!/\.(webp|jpg|png|svg|ttf|css|m?js|txt)$/.test(path)) {

@@ -57,6 +57,13 @@
       "when": 1795432000000,
       "tag": "0007_site_stats",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1795434000000,
+      "tag": "0008_site_social",
+      "breakpoints": true
     }
   ]
 }

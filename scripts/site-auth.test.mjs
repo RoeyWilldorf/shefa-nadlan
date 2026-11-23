@@ -150,3 +150,47 @@ test("photo enhancement brightens dark, flat photos without breaking pixels",asy
   assert.ok(after>before+20,`expected brighter (${before} -> ${after})`);
   for(let i=3;i<d.length;i+=4) assert.equal(d[i],255);
 });
+
+test("Facebook/Instagram: connect stores the page token server-side and publishing posts to both",async()=>{
+  const calls=[]; const realFetch=globalThis.fetch;
+  globalThis.fetch=async(url,init)=>{
+    const u=String(url);
+    if(!u.startsWith("https://graph.facebook.com")) return realFetch(url,init);
+    calls.push({u,body:init?.body?String(init.body):""});
+    const reply=data=>new Response(JSON.stringify(data),{status:200});
+    if(u.includes("/oauth/access_token")) return reply({access_token:"user-token"});
+    if(u.includes("/me/accounts")) return reply({data:[{id:"111",name:"שפע נדל״ן",access_token:"page-token",instagram_business_account:{id:"222",username:"shefanadlan"}}]});
+    if(u.includes("/111/photos")) return reply({id:"p1",post_id:"111_p1"});
+    if(u.includes("/222/media_publish")) return reply({id:"ig-post"});
+    if(u.includes("/222/media")) return reply({id:"container"});
+    if(u.includes("/container?")) return reply({status_code:"FINISHED"});
+    return reply({});
+  };
+  env.FB_APP_ID="app"; env.FB_APP_SECRET="secret";
+  try {
+    const login=await call("/login",{method:"POST",headers:{Origin:origin},body:new URLSearchParams({password:"correct horse"})});
+    const cookie=login.headers.get("set-cookie").split(";")[0];
+    const start=await call("/office/social/connect",{headers:{cookie}});
+    assert.equal(start.status,303);
+    assert.match(start.headers.get("location"),/facebook\.com\/v\d+\.\d+\/dialog\/oauth.*pages_manage_posts/);
+    const state=start.headers.get("set-cookie").match(/shefa_oauth=([^;]+)/)[1];
+    assert.equal((await call(`/office/social/callback?code=abc&state=wrong`,{headers:{cookie:`${cookie}; shefa_oauth=${state}`}})).headers.get("location"),"/office?social=error#marketing");
+    const done=await call(`/office/social/callback?code=abc&state=${state}`,{headers:{cookie:`${cookie}; shefa_oauth=${state}`}});
+    assert.equal(done.headers.get("location"),"/office?social=ok#marketing");
+    const status=await (await call("/api/office/social",{headers:{cookie}})).json();
+    assert.equal(status.page,"שפע נדל״ן"); assert.equal(status.instagram,"shefanadlan");
+    assert.ok(!JSON.stringify(status).includes("page-token"),"the token never goes to the browser");
+
+    const json={cookie,Origin:origin,"Content-Type":"application/json"};
+    const draft={title:"דירה לבדיקת רשתות",town:"גדרה",neighborhood:"",price:1500000,deal:"sale",type:"דירה",status:"draft",rooms:3,area:80,address:"x",owner:"y",ownerPhone:"0501234567",agent:"a",notes:"n",description:"תיאור"};
+    const {id}=await (await call("/api/office/properties",{method:"POST",headers:json,body:JSON.stringify(draft)})).json();
+    const png=Uint8Array.from([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,2,0,0,0]);
+    await call(`/api/office/properties/${id}/files?label=photo&public=1&branded=1`,{method:"POST",headers:{cookie,Origin:origin},body:png});
+    await call(`/api/office/properties/${id}`,{method:"PUT",headers:json,body:JSON.stringify({...draft,status:"active",verified:true,approved:true,distinctProperty:true,version:1,changeReason:"פרסום"})});
+    const post=await (await call(`/api/office/properties/${id}/social-post`,{method:"POST",headers:{cookie,Origin:origin}})).json();
+    assert.deepEqual(post.results.map(r=>[r.network,r.error]),[["facebook",null],["instagram",null]]);
+    const fb=calls.find(c=>c.u.includes("/111/photos"));
+    assert.ok(fb.body.includes("access_token=page-token"));
+    assert.ok(decodeURIComponent(fb.body).includes(`/listing/${id}`));
+  } finally { globalThis.fetch=realFetch; delete env.FB_APP_ID; delete env.FB_APP_SECRET; }
+});
