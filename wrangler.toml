@@ -27,4 +27,6 @@ binding = "AI"
 # GOOGLE_SITE_VERIFICATION - the "content" value from Google Search Console's HTML-tag method
 # CF_ANALYTICS_TOKEN       - the token from Cloudflare Web Analytics
 # SITE_INDEXING = "off"    - hides the site from Google
+# RESEND_API_KEY is a Secret (set in the Cloudflare dashboard), never here.
 [vars]
+NOTIFY_EMAIL = "roivil13@gmail.com"
