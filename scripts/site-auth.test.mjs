@@ -39,3 +39,45 @@ test("canonical links point at the current site",async()=>{
   assert.ok(html.includes(`href="${origin}/"`));
   assert.ok(!html.includes("chatgpt.site"));
 });
+
+test("robots.txt and sitemap.xml are served",async()=>{
+  const robots=await (await call("/robots.txt")).text();
+  assert.match(robots,/Disallow: \/office/);
+  assert.match(robots,new RegExp(`Sitemap: ${origin}/sitemap.xml`));
+  const sitemap=await (await call("/sitemap.xml")).text();
+  assert.match(sitemap,/<urlset/);
+  assert.ok(sitemap.includes(`<loc>${origin}/</loc>`));
+});
+test("public pages are indexable, demo and office pages are not",async()=>{
+  const home=await call("/");
+  assert.equal(home.headers.get("x-robots-tag"),null);
+  assert.ok(!(await home.text()).includes('content="noindex'));
+  const demo=await call("/properties/gedera-01.html");
+  assert.match(await demo.text(),/noindex/);
+  const login=await call("/login");
+  assert.match(login.headers.get("x-robots-tag")||"",/noindex/);
+});
+test("unknown pages get a friendly 404 page",async()=>{
+  const response=await call("/no-such-page");
+  assert.equal(response.status,404);
+  assert.match(await response.text(),/העמוד שחיפשתם לא נמצא/);
+});
+test("AI copy is owner-only and uses only the property's facts",async()=>{
+  const form={method:"POST",headers:{Origin:origin},body:new URLSearchParams({password:"correct horse"})};
+  const session=(await call("/login",form)).headers.get("set-cookie").split(";")[0];
+  const draft={title:"דירת בדיקה",town:"אשדוד",neighborhood:"מרכז",price:1990000,deal:"sale",type:"דירה",status:"draft",rooms:4,area:100,
+    address:"רחוב סודי 1",owner:"בעל נכס",ownerPhone:"0501234567",agent:"סוכן",notes:"פנימי",parking:true,description:"דירה מוארת"};
+  const created=await call("/api/office/properties",{method:"POST",headers:{cookie:session,Origin:origin,"Content-Type":"application/json"},body:JSON.stringify(draft)});
+  const {id}=await created.json();
+  let prompt="";
+  env.AI={run:async(model,input)=>{prompt=JSON.stringify(input);return {response:"כותרת: דירה מוארת באשדוד\n\nגוף הנוסח לבדיקה עם מספיק טקסט."};}};
+  const anonymous=await call(`/api/office/properties/${id}/ai-copy`,{method:"POST",headers:{Origin:origin},body:"{}"});
+  assert.equal(anonymous.status,403);
+  const response=await call(`/api/office/properties/${id}/ai-copy`,{method:"POST",headers:{cookie:session,Origin:origin,"Content-Type":"application/json"},body:JSON.stringify({channel:"facebook"})});
+  assert.equal(response.status,200);
+  const copy=await response.json();
+  assert.equal(copy.title,"דירה מוארת באשדוד");
+  assert.ok(prompt.includes("אשדוד")&&prompt.includes("חניה"));
+  assert.ok(!prompt.includes("רחוב סודי")&&!prompt.includes("0501234567"),"private details must not reach the AI");
+  delete env.AI;
+});

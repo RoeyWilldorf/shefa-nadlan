@@ -18,3 +18,13 @@ binding = "FILES"
 
 [observability]
 enabled = true
+
+# Cloudflare Workers AI (free daily allowance) - writes marketing copy in the office.
+[ai]
+binding = "AI"
+
+# Optional public settings (not secrets). Fill in and redeploy to enable:
+# GOOGLE_SITE_VERIFICATION - the "content" value from Google Search Console's HTML-tag method
+# CF_ANALYTICS_TOKEN       - the token from Cloudflare Web Analytics
+# SITE_INDEXING = "off"    - hides the site from Google
+[vars]

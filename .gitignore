@@ -4,3 +4,4 @@ dist/.openai/
 node_modules/
 .dev.vars
 .wrangler/
+wrangler.local.toml

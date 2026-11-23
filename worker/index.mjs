@@ -444,6 +444,29 @@ async function saveComparable(db,actor,propertyId,data,method) {
 function escaped(value) {
   return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
+// Social preview (WhatsApp/Facebook) + Google structured data for a live listing.
+function listingMeta(property,photoIds,url,canonical,title,price) {
+  const description=escaped((property.description||property.title).replace(/\s+/g," ").slice(0,190));
+  const image=photoIds[0]?`${url.origin}/listing-media/${photoIds[0].id}`:`${url.origin}/media/hero.webp`;
+  const dealWord=property.deal==="rent"?"להשכרה":"למכירה";
+  const data={"@context":"https://schema.org","@type":"RealEstateListing",name:property.title,url:`${url.origin}${url.pathname}`,
+    description:property.description||property.title,datePosted:property.publishedAt||undefined,image:photoIds.slice(0,6).map(p=>`${url.origin}/listing-media/${p.id}`),
+    offers:{"@type":"Offer",price:property.price,priceCurrency:"ILS",availability:property.status==="negotiation"?"https://schema.org/LimitedAvailability":"https://schema.org/InStock",
+      businessFunction:property.deal==="rent"?"http://purl.org/goodrelations/v1#LeaseOut":"http://purl.org/goodrelations/v1#Sell"},
+    about:{"@type":"Accommodation",numberOfRooms:property.rooms||undefined,floorSize:property.area?{"@type":"QuantitativeValue",value:property.area,unitCode:"MTK"}:undefined,
+      address:{"@type":"PostalAddress",addressLocality:property.town,addressCountry:"IL"}},
+    provider:{"@type":"RealEstateAgent",name:"שפע נדל״ן",url:url.origin}};
+  return `<meta property="og:type" content="website">
+  <meta property="og:site_name" content="שפע נדל״ן">
+  <meta property="og:locale" content="he_IL">
+  <meta property="og:title" content="${title} · ${escaped(dealWord)} ב${escaped(property.town)} · ${escaped(price)}">
+  <meta property="og:description" content="${description}">
+  <meta property="og:url" content="${canonical}">
+  <meta property="og:image" content="${escaped(image)}">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">${JSON.stringify(data).replace(/</g,"\\u003c")}</script>
+`;
+}
 async function listingPage(env,id,url,assets) {
   const row=await first(env.DB,`${catalogSql} AND p.id=?`,id);
   if (!row) return new Response("הנכס אינו זמין.",{status:404,headers:{...privateHeaders,"Content-Type":"text/plain; charset=utf-8"}});
@@ -466,7 +489,7 @@ async function listingPage(env,id,url,assets) {
   const officialMarket=property.deal==="sale"?`<a class="button outline" href="https://www.gov.il/he/service/real_estate_information/">מאגר עסקאות נדל״ן של רשות המסים</a>`:"";
   const detail=`<nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/#listings">נכסים</a><span aria-current="page">${title}</span></nav>
     <article class="live-listing"><header><p class="location">${escaped([property.town,property.neighborhood].filter(Boolean).join(" · "))}</p><h1>${title}</h1><p class="property-price"><bdi>${price}</bdi></p></header>
-    <div class="action-row"><a class="button primary" href="/visit?property=${id}">בקשת תיאום סיור</a><button class="button outline" type="button" data-whatsapp-property="${id}">WhatsApp על הנכס</button>${brandContacts.map(c=>`<a class="button outline" href="tel:${c.tel}">${c.name} <bdi>${c.display}</bdi></a>`).join("")}</div>
+    <div class="action-row"><a class="button primary" href="/visit?property=${id}">בקשת תיאום סיור</a><button class="button outline" type="button" data-whatsapp-property="${id}">WhatsApp על הנכס</button><button class="button outline" type="button" data-share-listing>שיתוף הנכס</button>${brandContacts.map(c=>`<a class="button outline" href="tel:${c.tel}">${c.name} <bdi>${c.display}</bdi></a>`).join("")}</div>
     <p class="listing-description">${escaped(property.description)}</p>
     <ul class="amenities" aria-label="מאפייני הנכס">${facts.map(f=>`<li>${escaped(f)}</li>`).join("")}</ul>
     ${photos?`<section aria-labelledby="gallery-title"><h2 id="gallery-title">תמונות הנכס</h2><div class="live-gallery">${photos}</div></section>`:""}
@@ -482,6 +505,7 @@ async function listingPage(env,id,url,assets) {
     .replace(/<meta name="description" content="[^"]*">/,()=>`<meta name="description" content="${escaped(property.description.slice(0,180)||property.title)}">`)
     .replace(/<link rel="canonical" href="[^"]*">/,()=>`<link rel="canonical" href="${canonical}">`)
     .replace(/<meta property="og:[^"]+" content="[^"]*">\s*/g,"")
+    .replace("</head>",()=>`${listingMeta(property,photoIds,url,canonical,title,price)}</head>`)
     .replace(/<main[^>]*>[\s\S]*?<\/main>/,()=>`<main class="wrap secondary-page" id="content" tabindex="-1">${detail}</main>`);
   return new Response(page,{headers:{...privateHeaders,"Content-Type":"text/html; charset=utf-8"}});
 }

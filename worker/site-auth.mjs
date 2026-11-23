@@ -11,6 +11,8 @@
 //   * Login attempts and public inquiries are rate limited per IP.
 //   * If no R2 bucket is bound but a KV namespace "FILES" is, files are stored in KV.
 
+import {robotsTxt,sitemapXml,aiCopy,aiCopyPath,notFoundPage,publicHtml,publicHeaders} from "./site-growth.mjs";
+
 const SESSION_COOKIE="shefa_session";
 const VISITOR_COOKIE="shefa_visitor";
 const SESSION_HOURS=12;
@@ -175,7 +177,7 @@ async function migrate(db,migrations) {
   }
 }
 
-export function withSiteAuth(worker,{migrations=[]}={}) {
+export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
   return {async fetch(request,env,ctx) {
     if (!env.BUCKET&&env.FILES) env={...env,BUCKET:kvBucket(env.FILES)};
     if (env.DB&&migrations.length) {
@@ -241,24 +243,38 @@ export function withSiteAuth(worker,{migrations=[]}={}) {
       headers.set("oai-authenticated-user-id",`visitor-${visitor}`);
     }
     const innerEnv=env.OFFICE_OWNER_EMAIL?env:{...env,OFFICE_OWNER_EMAIL:DEFAULT_OWNER_EMAIL};
+    const inner=(target,init2={})=>worker.fetch(new Request(new URL(target,url),{method:"GET",headers,redirect:"manual",...init2}),innerEnv,ctx);
+
+    if (path==="/robots.txt"&&method==="GET") return robotsTxt(url);
+    if (path==="/sitemap.xml"&&method==="GET") return sitemapXml(url,guides,()=>inner("/api/catalog"));
+    const ai=path.match(aiCopyPath);
+    if (ai&&method==="POST") {
+      if (!owner||!sameOrigin(request)) return new Response(JSON.stringify({error:"אזור המשרד זמין לבעל האתר לאחר התחברות."}),{status:403,headers:{"Content-Type":"application/json; charset=utf-8"}});
+      const data=await request.json().catch(()=>({}));
+      return aiCopy(env,data,()=>inner(`/api/office/properties/${ai[1]}`),url.origin);
+    }
+
     const init={method,headers,redirect:"manual"};
     if (method!=="GET"&&method!=="HEAD") {init.body=request.body; init.duplex="half";}
     let response=await worker.fetch(new Request(request.url,init),innerEnv,ctx);
 
     const type=response.headers.get("content-type")||"";
-    const extra={};
-    if (type.startsWith("text/html")||type.includes("xml")) {
+    if (response.status===404&&(method==="GET"||method==="HEAD")&&!path.startsWith("/api/")&&!/\.(webp|jpg|png|svg|ttf|css|m?js|txt)$/.test(path)) {
+      response=new Response(method==="HEAD"?null:notFoundPage(),{status:404,headers:{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-store"}});
+    } else if (type.startsWith("text/html")||type.includes("xml")) {
       // The pages were written for the old address; point canonical/OG links at this site.
-      const text=(await response.text()).replaceAll(LEGACY_ORIGIN,url.origin);
+      const text=publicHtml((await response.text()).replaceAll(LEGACY_ORIGIN,url.origin),path,env);
       response=new Response(method==="HEAD"?null:text,response);
-      extra["X-Frame-Options"]="SAMEORIGIN";
     }
-    if (setCookies.length||Object.keys(extra).length||url.protocol==="https:") {
-      response=new Response(response.body,response);
-      for (const value of setCookies) response.headers.append("Set-Cookie",value);
-      for (const [name,value] of Object.entries(extra)) response.headers.set(name,value);
-      if (url.protocol==="https:") response.headers.set("Strict-Transport-Security","max-age=31536000");
-    }
+    response=new Response(response.body,response);
+    for (const value of setCookies) response.headers.append("Set-Cookie",value);
+    const h=response.headers;
+    h.set("X-Content-Type-Options","nosniff");
+    h.set("Referrer-Policy","strict-origin-when-cross-origin");
+    h.set("Permissions-Policy","camera=(), microphone=(), geolocation=(), interest-cohort=()");
+    if ((h.get("content-type")||"").startsWith("text/html")) h.set("X-Frame-Options","SAMEORIGIN");
+    if (url.protocol==="https:") h.set("Strict-Transport-Security","max-age=31536000");
+    publicHeaders(response,path,env);
     return response;
   }};
 }

@@ -454,7 +454,12 @@ async function studio(form) {
     ${select("status","מצב נוסח",{draft:"טיוטה",approved:"מאושר להפצה ידנית"},draft?.status??"draft")}
     ${area("body","תוכן הפרסום",withBrandContacts(suggested.body),10000)}
     </div><p class="office-error" role="alert" hidden></p>
-    ${actionRow('<button type="submit" class="button primary">שמירת נוסח</button><button type="button" class="button outline" id="copy-draft">העתקת נוסח</button>')}</form><section class="brand-studio"></section>`;
+    ${actionRow('<button type="submit" class="button primary">שמירת נוסח</button><button type="button" class="button outline" id="copy-draft">העתקת נוסח</button>')}</form>
+    <section class="office-panel office-ai" aria-labelledby="ai-title"><h3 id="ai-title">כתיבה עם AI</h3>
+    <p class="office-small">ה-AI כותב נוסח חדש לפי פרטי הנכס והערוץ שנבחר, ומכניס אותו לטופס למעלה לעריכה. הוא מנוסח רק מהעובדות שהוזנו בנכס - כדאי לעבור על הטקסט לפני פרסום.</p>
+    <div class="office-fields">${select("ai-tone","סגנון",{warm:"חם ומזמין",luxury:"יוקרתי",investor:"למשקיעים",urgent:"הזדמנות"},"warm")}</div>
+    ${actionRow('<button type="button" class="button primary" id="ai-draft">✨ כתיבת נוסח עם AI</button>')}
+    <p class="office-small" id="ai-status" role="status" aria-live="polite"></p></section><section class="brand-studio"></section>`;
     bindBrandStudio(areaNode.querySelector(".brand-studio"),property,files,channel);
     const editor=byId("studio-edit");
     editor.addEventListener("submit",async event=>{
@@ -469,6 +474,22 @@ async function studio(form) {
       field.value=withBrandContacts(field.value);
       try {await navigator.clipboard.writeText(field.value);status.textContent="הנוסח הועתק.";}
       catch {field.focus();field.select();status.textContent="הנוסח סומן להעתקה.";}
+    });
+    const aiButton=byId("ai-draft"),aiStatus=byId("ai-status");
+    aiButton.addEventListener("click",async ()=>{
+      aiButton.disabled=true;aiStatus.textContent="ה-AI כותב נוסח, זה לוקח כמה שניות…";
+      try {
+        const response=await fetch(`/api/office/properties/${propertyId}/ai-copy`,{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({channel,tone:areaNode.querySelector("[name=ai-tone]").value})});
+        const result=await response.json().catch(()=>({}));
+        if(!response.ok) throw Error(result.error??"הכתיבה עם AI נכשלה.");
+        editor.elements.title.value=result.title;
+        editor.elements.body.value=withBrandContacts(result.body);
+        editor.elements.status.value="draft";
+        aiStatus.textContent="הנוסח מוכן בטופס למעלה. אפשר לערוך, לשמור ולהעתיק. אפשר ללחוץ שוב לקבלת גרסה אחרת.";
+        editor.elements.title.focus();
+      } catch(problem) {aiStatus.textContent=problem.message;}
+      finally {aiButton.disabled=false;}
     });
     editor.elements.title.focus();
   });

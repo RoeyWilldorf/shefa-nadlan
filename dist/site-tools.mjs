@@ -119,3 +119,16 @@ function init(publicSite){
 }
 
 if(typeof document!=="undefined"&&document.body.dataset.siteTools) init(document.body.dataset.siteTools==="public");
+
+// "שיתוף הנכס": native share sheet on phones, WhatsApp share as a fallback.
+if(typeof document!=="undefined") document.addEventListener("click",async event=>{
+  const button=event.target.closest("[data-share-listing]");
+  if(!button) return;
+  const title=document.querySelector("h1")?.textContent.trim()||document.title;
+  const url=location.origin+location.pathname;
+  if(navigator.share){
+    try{await navigator.share({title,text:`${title} · שפע נדל״ן`,url});return;}
+    catch(error){if(error?.name==="AbortError")return;}
+  }
+  window.open(`https://wa.me/?text=${encodeURIComponent(`${title} · שפע נדל״ן\n${url}`)}`,"_blank","noopener");
+});

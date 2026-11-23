@@ -84,3 +84,5 @@
 .brand-studio canvas[hidden]{display:none}
 .office-logout{margin:0}
 .office-logout .office-exit{margin-top:4px;width:100%;background:none;font:inherit;cursor:pointer;text-align:start}
+.office-ai{margin-top:18px;background:#fbf7ec;border-color:#e9d7b3}
+.office-ai h3{margin:0 0 6px;font-size:1.1rem}
