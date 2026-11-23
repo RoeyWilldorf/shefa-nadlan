@@ -194,3 +194,17 @@ test("Facebook/Instagram: connect stores the page token server-side and publishi
     assert.ok(decodeURIComponent(fb.body).includes(`/listing/${id}`));
   } finally { globalThis.fetch=realFetch; delete env.FB_APP_ID; delete env.FB_APP_SECRET; }
 });
+
+test("AI description helper works from unsaved form values and is owner-only",async()=>{
+  let prompt=""; env.AI={run:async(model,input)=>{prompt=JSON.stringify(input);return {response:"דירת 4 חדרים בגדרה\n\nתיאור משופר ומפורט של הדירה."};}};
+  try {
+    const body=JSON.stringify({town:"גדרה",deal:"sale",type:"דירה",rooms:"4",area:"100",price:"2000000",parking:"yes",description:"דירה יפה",owner:"סודי",ownerPhone:"0501234567"});
+    assert.equal((await call("/api/office/ai-describe",{method:"POST",headers:{Origin:origin},body})).status,403);
+    const login=await call("/login",{method:"POST",headers:{Origin:origin},body:new URLSearchParams({password:"correct horse"})});
+    const cookie=login.headers.get("set-cookie").split(";")[0];
+    const result=await (await call("/api/office/ai-describe",{method:"POST",headers:{cookie,Origin:origin,"Content-Type":"application/json"},body})).json();
+    assert.equal(result.title,"דירת 4 חדרים בגדרה");
+    assert.ok(prompt.includes("חניה")&&prompt.includes("דירה יפה"));
+    assert.ok(!prompt.includes("סודי")&&!prompt.includes("0501234567"));
+  } finally { delete env.AI; }
+});

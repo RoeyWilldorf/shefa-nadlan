@@ -213,7 +213,9 @@ function controls(p) {
   ${Object.entries(featureNames).map(([key,label])=>select(key,label,{"":"לא נבדק",yes:"כן",no:"לא"},x[key]===true?"yes":x[key]===false?"no":"")).join("")}
   ${input("owner","שם בעל הנכס · פנימי",internal.owner,'maxlength="100"')}${input("ownerPhone","טלפון בעל הנכס · פנימי",internal.ownerPhone,'type=tel maxlength="30" dir=ltr')}
   ${input("agent","סוכן אחראי · פנימי",internal.agent,'maxlength="100"')}${select("status","סטטוס נכס",propertyStates,p?.status??"draft")}
-  ${area("description","תיאור שיווקי",p?.description)}${area("notes","הערות משרדיות · פנימי",internal.notes,3500)}
+  ${area("description","תיאור שיווקי",p?.description)}
+  <div class="wide office-ai-inline"><button type="button" class="button outline" data-ai-describe>✨ שיפור התיאור עם AI</button><span class="office-small" role="status" aria-live="polite"></span></div>
+  ${area("notes","הערות משרדיות · פנימי",internal.notes,3500)}
   <label class="office-check wide"><input name="verified" type="checkbox" ${p?.verified?"checked":""}> פרטי הנכס אומתו</label>`;
 }
 function preferences(l) {
@@ -623,3 +625,23 @@ view.addEventListener("submit",event=>{
 dialog.addEventListener("close",()=>{dialog.removeAttribute("aria-labelledby");edit.replaceChildren();if(opener?.isConnected)opener.focus();});
 window.addEventListener("hashchange",()=>{if(currentPage()==="marketing"&&byId("studio-draft")?.children.length)return;render();byId("office-heading").focus();});
 await refresh();
+
+// "שיפור התיאור עם AI" in the property editor: rewrites the marketing description from the form's facts.
+document.addEventListener("click",async event=>{
+  const button=event.target.closest("[data-ai-describe]");
+  if(!button) return;
+  const form=button.closest("form"), note=button.parentElement.querySelector("[role=status]");
+  const values=Object.fromEntries(new FormData(form));
+  const previous=form.elements.description.value;
+  button.disabled=true;note.textContent="ה-AI כותב תיאור…";
+  try {
+    const response=await fetch("/api/office/ai-describe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(values)});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok) throw Error(result.error??"השיפור נכשל.");
+    form.elements.description.value=result.body;
+    if(!form.elements.title.value.trim()) form.elements.title.value=result.title;
+    note.innerHTML='התיאור עודכן - כדאי לעבור עליו לפני השמירה. <button type="button" class="text-button" data-ai-undo>ביטול</button>';
+    note.querySelector("[data-ai-undo]").onclick=()=>{form.elements.description.value=previous;note.textContent="התיאור הקודם הוחזר.";};
+  } catch(problem) {note.textContent=problem.message;}
+  finally {button.disabled=false;}
+});

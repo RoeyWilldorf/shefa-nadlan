@@ -11,7 +11,7 @@
 //   * Login attempts and public inquiries are rate limited per IP.
 //   * If no R2 bucket is bound but a KV namespace "FILES" is, files are stored in KV.
 
-import {robotsTxt,sitemapXml,aiCopy,aiCopyPath,notFoundPage,publicHtml,publicHeaders} from "./site-growth.mjs";
+import {robotsTxt,sitemapXml,aiCopy,aiCopyPath,notFoundPage,publicHtml,publicHeaders,writeCopy} from "./site-growth.mjs";
 import {notifyReady,sendEmail,leadEmail,notifyMatches} from "./site-notify.mjs";
 import {countView,statsReport} from "./site-stats.mjs";
 import {socialStatus,connectRedirect,connectCallback,updateSocial,publishProperty,autoPublish} from "./site-social.mjs";
@@ -283,6 +283,20 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
       if (!owner) return new Response(JSON.stringify({error:"אזור המשרד זמין לבעל האתר לאחר התחברות."}),{status:403,headers:{"Content-Type":"application/json; charset=utf-8"}});
       const days=[7,30,90].includes(Number(url.searchParams.get("days")))?Number(url.searchParams.get("days")):30;
       return new Response(JSON.stringify(await statsReport(env,days,()=>inner("/api/catalog"),slugTowns)),{headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
+    }
+    if (path==="/api/office/ai-describe"&&method==="POST") {
+      if (!owner||!sameOrigin(request)) return forbidden();
+      if (!env.AI) return new Response(JSON.stringify({error:"כתיבה עם AI עדיין לא הופעלה בשרת."}),{status:503,headers:{"Content-Type":"application/json; charset=utf-8"}});
+      const d=await request.json().catch(()=>({}));
+      const text=(value,max)=>typeof value==="string"?value.trim().slice(0,max):"";
+      const number=value=>Number.isFinite(Number(value))&&value!==""?Number(value):null;
+      const specs={additionalArea:number(d.additionalArea),floor:number(d.floor),floorCount:number(d.floorCount),condition:text(d.condition,90),availableOn:text(d.availableOn,20)};
+      for (const key of ["lift","parking","shelter","balcony","storage","yard"]) specs[key]=d[key]==="yes";
+      const property={deal:d.deal==="rent"?"rent":"sale",property_type:text(d.type,40),town:text(d.town,70),neighborhood:text(d.neighborhood,95),
+        rooms:number(d.rooms),area:number(d.area),price:number(d.price)||0,description:text(d.description,3000),specs,status:"draft"};
+      if (!property.town) return new Response(JSON.stringify({error:"יש למלא לפחות יישוב לפני שיפור התיאור."}),{status:400,headers:{"Content-Type":"application/json; charset=utf-8"}});
+      const copy=await writeCopy(env,property,"site","warm","");
+      return new Response(JSON.stringify(copy??{error:"שירות ה-AI לא החזיר טקסט כרגע. נסו שוב בעוד רגע."}),{status:copy?200:502,headers:{"Content-Type":"application/json; charset=utf-8"}});
     }
     const ai=path.match(aiCopyPath);
     if (ai&&method==="POST") {

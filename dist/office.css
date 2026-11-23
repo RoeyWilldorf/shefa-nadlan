@@ -106,3 +106,4 @@
 .photo-compare figcaption{text-align:center;font-size:.85rem;color:#53645a}
 .office-success{color:#1d6b3a;font-weight:700}
 #social-panel{margin-bottom:14px}
+.office-ai-inline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:-4px}
