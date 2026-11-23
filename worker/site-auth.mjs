@@ -284,6 +284,17 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
       const days=[7,30,90].includes(Number(url.searchParams.get("days")))?Number(url.searchParams.get("days")):30;
       return new Response(JSON.stringify(await statsReport(env,days,()=>inner("/api/catalog"),slugTowns)),{headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
     }
+    // Importing listings: the office can pull photos of its own Yad2 listings through the server.
+    if (path==="/api/office/import-image"&&method==="GET") {
+      if (!owner) return forbidden();
+      let target;
+      try { target=new URL(url.searchParams.get("url")); } catch { return new Response("bad url",{status:400}); }
+      if (target.protocol!=="https:"||!/(^|\.)yad2\.co\.il$/.test(target.hostname)) return new Response("host not allowed",{status:400});
+      const upstream=await fetch(target,{headers:{"User-Agent":"Mozilla/5.0 (compatible; ShefaNadlanImport/1.0)"}});
+      const type=upstream.headers.get("content-type")||"";
+      if (!upstream.ok||!type.startsWith("image/")) return new Response("image not available",{status:502});
+      return new Response(upstream.body,{headers:{"Content-Type":type,"Cache-Control":"no-store"}});
+    }
     if (path==="/api/office/ai-describe"&&method==="POST") {
       if (!owner||!sameOrigin(request)) return forbidden();
       if (!env.AI) return new Response(JSON.stringify({error:"כתיבה עם AI עדיין לא הופעלה בשרת."}),{status:503,headers:{"Content-Type":"application/json; charset=utf-8"}});

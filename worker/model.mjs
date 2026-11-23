@@ -6,7 +6,7 @@ export const intents = {general:"בירור כללי",visit:"בקשת סיור",
 export const channels = {site:"אתר שפע נדל״ן",facebook:"Facebook",instagram:"Instagram",whatsapp:"WhatsApp",marketplace:"Marketplace",story:"סטוריז",landing:"דף נחיתה"};
 export const featureNames = {lift:"מעלית",parking:"חניה",shelter:"ממ״ד",balcony:"מרפסת",storage:"מחסן",yard:"חצר"};
 export const idPattern = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
-export const supportedTypes = ["דירה","בית פרטי","קוטג׳","דירת גן","פנטהאוז","דופלקס","מגרש","משרד","מסחרי","אחר"];
+export const supportedTypes = ["דירה","בית פרטי","דו-משפחתי","קוטג׳","דירת גן","פנטהאוז","דופלקס","מגרש","משרד","מסחרי","אחר"];
 
 export function marketingCopy(p, channel, url) {
   const deal = p.deal === "sale" ? "למכירה" : "להשכרה";

@@ -208,3 +208,17 @@ test("AI description helper works from unsaved form values and is owner-only",as
     assert.ok(!prompt.includes("סודי")&&!prompt.includes("0501234567"));
   } finally { delete env.AI; }
 });
+
+test("listing import image proxy is owner-only and limited to Yad2 hosts",async()=>{
+  const realFetch=globalThis.fetch;
+  globalThis.fetch=async(u,i)=>String(u).startsWith("https://img.yad2.co.il/")?new Response(new Uint8Array([1,2,3]),{headers:{"Content-Type":"image/jpeg"}}):realFetch(u,i);
+  try {
+    const q="/api/office/import-image?url="+encodeURIComponent("https://img.yad2.co.il/Pic/1.jpg");
+    assert.equal((await call(q)).status,403);
+    const login=await call("/login",{method:"POST",headers:{Origin:origin},body:new URLSearchParams({password:"correct horse"})});
+    const cookie=login.headers.get("set-cookie").split(";")[0];
+    const ok=await call(q,{headers:{cookie}});
+    assert.equal(ok.status,200); assert.equal(ok.headers.get("content-type"),"image/jpeg");
+    assert.equal((await call("/api/office/import-image?url="+encodeURIComponent("https://evil.example/x.jpg"),{headers:{cookie}})).status,400);
+  } finally { globalThis.fetch=realFetch; }
+});
