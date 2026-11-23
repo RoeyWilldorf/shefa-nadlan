@@ -547,3 +547,4 @@ html.display-motion,html.display-motion *,html.display-motion *::before,html.dis
 .mortgage-warn{background:#fff4e0;border:1px solid var(--sand);border-radius:10px;padding:10px 12px;margin-top:10px}
 @media (max-width:760px){.about-hero{grid-template-columns:1fr}.mortgage-form{grid-template-columns:1fr}}
 .about-closing{font-size:1.1rem;font-weight:700;color:var(--forest);margin-top:18px}
+.footer-licenses{flex-basis:100%;font-size:.8rem}.about-people small{color:var(--muted);font-size:.8rem}

@@ -250,8 +250,8 @@ const aboutPage = layout({
         <h1>אודות שפע נדל״ן</h1>
         <p class="reading-lead">שפע נדל״ן היא חברה לתיווך נדל״ן הנמצאת בגדרה, ומתמחה בשיווק נכסים באזור השפלה: נכסי יד שנייה, נכסים חדשים של חברות בנייה, מגרשים ודירות להשכרה.</p>
         <div class="about-people">
-          <div><strong>שרל וילדורף</strong><a href="tel:+972527504034"><bdi>052-7504034</bdi></a></div>
-          <div><strong>רועי וילדורף</strong><a href="tel:+972527504037"><bdi>052-7504037</bdi></a></div>
+          <div><strong>שרל וילדורף</strong><small>רישיון תיווך <bdi>30826114</bdi></small><a href="tel:+972527504034"><bdi>052-7504034</bdi></a></div>
+          <div><strong>רועי וילדורף</strong><small>רישיון תיווך <bdi>3211578</bdi></small><a href="tel:+972527504037"><bdi>052-7504037</bdi></a></div>
         </div>
       </div>
       <figure><img src="/media/team.webp" width="1200" height="988" alt="שרל וילדורף (משמאל) ורועי וילדורף, מייסדי שפע נדל״ן" fetchpriority="high"><figcaption>שרל ורועי וילדורף - אב ובן, משרד תיווך משפחתי</figcaption></figure>
