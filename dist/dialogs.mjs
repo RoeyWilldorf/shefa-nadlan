@@ -48,7 +48,7 @@ function inquiryMarkup(intent, property) {
       ${owner ? '<label class="field"><span>סוג הנכס (רשות)</span><select name="type"><option value="">לבחירת סוג</option><option>דירה</option><option>בית פרטי</option><option>נכס מסחרי</option><option>אחר</option></select></label>' : ""}
       ${feedback ? field("accessPage", "באיזה עמוד נתקלתם בקושי? (רשות)", 'maxlength="250"') : ""}
       <div class="field"><label for="inquiry-message">${feedback ? "תיאור התקלה או ההתאמה הדרושה (חובה)" : "הודעה (רשות)"}</label><textarea id="inquiry-message" name="message" maxlength="600" ${feedback ? 'required aria-describedby="error-message"' : ""}></textarea>${feedback ? '<span id="error-message" class="input-error" hidden></span>' : ""}</div>
-      <div class="inquiry-consent"><input id="inquiry-consent" name="consent" type="checkbox" required aria-describedby="error-consent"><label for="inquiry-consent">אני מסכים או מסכימה לשימוש בפרטים לצורך טיפול בפנייה.</label><span id="error-consent" class="input-error" hidden></span></div>
+      <div class="inquiry-consent"><input id="inquiry-consent" name="consent" type="checkbox" required aria-describedby="error-consent"><label for="inquiry-consent">אני מסכים או מסכימה לשימוש בפרטים לצורך טיפול בפנייה, לפי <a class="inline-link" href="/privacy.html" target="_blank">מדיניות הפרטיות</a>.</label><span id="error-consent" class="input-error" hidden></span></div>
       <button class="button primary" type="submit">שליחת פנייה ${icon("left")}</button>
     </form>
   </div>`;

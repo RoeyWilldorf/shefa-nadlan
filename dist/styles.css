@@ -531,3 +531,19 @@ html.display-motion,html.display-motion *,html.display-motion *::before,html.dis
 .area-others h2{font-size:1.1rem;margin-bottom:10px}
 .valuation-page ul{padding-inline-start:20px}
 .area-others{display:block!important}.area-others .town-links{margin-top:6px}
+.about-hero{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center;margin-bottom:26px}
+.about-hero figure{margin:0}
+.about-hero img{width:100%;height:auto;border-radius:var(--radius);box-shadow:var(--shadow)}
+.about-hero figcaption{color:var(--muted);font-size:.85rem;margin-top:6px;text-align:center}
+.about-people{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.about-people div{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 16px}
+.about-people a{color:var(--forest);font-weight:700}
+.about-page .reading-page p{margin-bottom:12px}
+.about-quote{border-inline-start:4px solid #c9a24a;background:#fbf7ec;padding:14px 18px;border-radius:10px;font-weight:700}
+.mortgage-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:end;margin-block:16px}
+.mortgage-result{margin-bottom:24px}
+.mortgage-main{display:flex;justify-content:space-between;align-items:center;background:var(--forest);color:#fff;border-radius:var(--radius);padding:16px 20px;margin-bottom:12px}
+.mortgage-main strong{font-size:1.8rem}
+.mortgage-warn{background:#fff4e0;border:1px solid var(--sand);border-radius:10px;padding:10px 12px;margin-top:10px}
+@media (max-width:760px){.about-hero{grid-template-columns:1fr}.mortgage-form{grid-template-columns:1fr}}
+.about-closing{font-size:1.1rem;font-weight:700;color:var(--forest);margin-top:18px}

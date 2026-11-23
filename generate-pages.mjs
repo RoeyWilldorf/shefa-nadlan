@@ -44,7 +44,7 @@ ${symbols}
 <header class="header">
   <div class="wrap header-inner">
     ${brand}
-    <nav aria-label="ניווט ראשי"><a href="/#listings">נכסים</a><a href="/#services">שירותי תיווך</a><a href="/#guides">מדריכים</a><a href="/valuation.html">הערכת שווי</a></nav>
+    <nav aria-label="ניווט ראשי"><a href="/#listings">נכסים</a><a href="/#services">שירותי תיווך</a><a href="/#guides">מדריכים</a><a href="/valuation.html">הערכת שווי</a><a href="/about.html">אודות</a></nav>
     <a class="mobile-tools" href="/#tools" aria-label="מחשבונים ומסמכים">${icon("calculator")}<span>כלים</span></a>
     <button type="button" class="button outline header-contact" data-contact>יצירת קשר</button>
   </div>
@@ -235,6 +235,96 @@ const valuationPage = layout({
   </article>`,
 });
 
+
+// ---------- About ----------
+const aboutPage = layout({
+  path: "/about.html",
+  title: "אודות שפע נדל״ן - משרד תיווך משפחתי בגדרה",
+  description: "שפע נדל״ן - משרד תיווך משפחתי בגדרה בהובלת שרל ורועי וילדורף. שיווק דירות יד שנייה, פרויקטים חדשים, מגרשים ודירות להשכרה באזור השפלה.",
+  image: "/media/team.webp",
+  contents: `
+  <nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/">דף הבית</a><span aria-hidden="true">/</span><span aria-current="page">אודות</span></nav>
+  <article class="about-page">
+    <div class="about-hero">
+      <div>
+        <h1>אודות שפע נדל״ן</h1>
+        <p class="reading-lead">שפע נדל״ן היא חברה לתיווך נדל״ן הנמצאת בגדרה, ומתמחה בשיווק נכסים באזור השפלה: נכסי יד שנייה, נכסים חדשים של חברות בנייה, מגרשים ודירות להשכרה.</p>
+        <div class="about-people">
+          <div><strong>שרל וילדורף</strong><a href="tel:+972527504034"><bdi>052-7504034</bdi></a></div>
+          <div><strong>רועי וילדורף</strong><a href="tel:+972527504037"><bdi>052-7504037</bdi></a></div>
+        </div>
+      </div>
+      <figure><img src="/media/team.webp" width="1200" height="988" alt="שרל וילדורף (משמאל) ורועי וילדורף, מייסדי שפע נדל״ן" fetchpriority="high"><figcaption>שרל ורועי וילדורף - אב ובן, משרד תיווך משפחתי</figcaption></figure>
+    </div>
+    <div class="reading-page">
+      <p>מאחורינו ניסיון עשיר בתיווך ובמכירת דירות ומגרשים. אנו מלווים את המוכר ואת הקונה בכל עסקה עד למשא ומתן מוצלח, שבו שני הצדדים מרוצים מהתוצאה. אנו דואגים ליידע את לקוחותינו במצב שוק הנדל״ן הרלוונטי בתקופת המכירה או הקנייה.</p>
+      <section><h2>כשאתם מוכרים נכס</h2>
+        <p>כשאנו מקבלים נכס למכירה, אנו בודקים את הנכס ובונים לו תוכנית שיווקית שתורמת למכירתו בזמן הקצר ביותר ובמחיר הטוב ביותר - במינימום טרחה מצד המוכר.</p>
+        <p>אנו מלווים את בעל הנכס עד תום העסקה, תוך מתן ייעוץ מקצועי בהכנת הבית למכירה.</p>
+        <p>אנו מתמחרים את שווי הנכס בהתאם למצב השוק העדכני, ומעדכנים את המוכר על נכסים דומים שנמכרו בתקופה הרלוונטית. בכל מקרה, אנו מעבירים למוכר את כל הצעות המחיר שמתקבלות מקונים פוטנציאליים.</p>
+      </section>
+      <p class="about-quote">מרבית הנכסים שהיו ברשותנו בבלעדיות נמכרו בתוך 3 חודשים בממוצע, לשביעות רצון שני הצדדים. אמינות היא דגלנו והחריצות בעורקינו - ושתיהן יחד הן הנוסחה להצלחה במכירת נכסים.</p>
+      <p class="about-closing">נשמח לקבל פניות מכם ולהציע לכם את שירותינו למכירה או לקניית בית חלומותיכם! חברת שפע נדל״ן על כלל סוכניה עומדת לרשותכם בכל עת.</p>
+      <div class="action-row"><a class="button primary" href="/valuation.html">כמה שווה הנכס שלי?</a><button class="button outline" type="button" data-contact>יצירת קשר</button><a class="button outline" href="/#listings">לנכסים שלנו</a></div>
+    </div>
+  </article>`,
+});
+
+// ---------- Mortgage calculator ----------
+const mortgagePage = layout({
+  path: "/mortgage.html",
+  title: "מחשבון משכנתא - החזר חודשי וסך ריבית",
+  description: "מחשבון משכנתא פשוט: כמה יהיה ההחזר החודשי, כמה ריבית תשלמו לאורך התקופה, וכמה הון עצמי צריך לפי שיעורי המימון המקובלים.",
+  head: `  <script type="module" src="/mortgage.mjs?v=1"></script>\n`,
+  contents: `
+  <nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/">דף הבית</a><span aria-hidden="true">/</span><a href="/#tools">מחשבונים</a><span aria-hidden="true">/</span><span aria-current="page">מחשבון משכנתא</span></nav>
+  <article class="reading-page mortgage-page">
+    <h1>מחשבון משכנתא</h1>
+    <p class="reading-lead">הזינו את מחיר הדירה, ההון העצמי, הריבית והתקופה - ותקבלו הערכה של ההחזר החודשי ושל סך הריבית.</p>
+    <form id="mortgage-form" class="content-card mortgage-form" novalidate>
+      <label class="field"><span>מחיר הדירה (₪)</span><input name="price" inputmode="numeric" value="2,000,000" required></label>
+      <label class="field"><span>הון עצמי (₪)</span><input name="equity" inputmode="numeric" value="600,000" required></label>
+      <label class="field"><span>ריבית שנתית ממוצעת (%)</span><input name="rate" inputmode="decimal" value="4.5" required></label>
+      <label class="field"><span>תקופה (שנים)</span><input name="years" inputmode="numeric" value="25" required></label>
+      <label class="field"><span>סוג הרכישה</span><select name="buyer"><option value="0.75">דירה יחידה (מימון עד 75%)</option><option value="0.7">דירה חלופית (מימון עד 70%)</option><option value="0.5">משקיע / דירה נוספת (מימון עד 50%)</option></select></label>
+    </form>
+    <div id="mortgage-result" class="mortgage-result" role="status" aria-live="polite"></div>
+    <section><h2>חשוב לדעת</h2><ul>
+      <li>החישוב לפי שיטת "שפיצר" (החזר חודשי קבוע) ובריבית קבועה, להמחשה בלבד. משכנתא אמיתית בנויה בדרך כלל מכמה מסלולים, וחלקם צמודי מדד או בריבית משתנה.</li>
+      <li>שיעורי המימון המרביים לפי הוראות בנק ישראל: עד 75% לדירה יחידה, עד 70% לדירה חלופית ועד 50% לדירה נוספת.</li>
+      <li>להצעה מדויקת פנו לבנק או ליועץ משכנתאות. מס רכישה ועלויות נוספות אפשר לחשב <a class="inline-link" href="/#tools">במחשבונים באתר</a>.</li>
+    </ul></section>
+    <div class="action-row"><a class="button primary" href="/#listings">חיפוש נכסים</a><button class="button outline" type="button" data-contact="buy">בקשת התאמת נכס לקנייה</button></div>
+  </article>`,
+});
+
+// ---------- Privacy policy ----------
+const privacyPage = layout({
+  path: "/privacy.html",
+  title: "מדיניות פרטיות",
+  description: "איזה מידע שפע נדל״ן אוספת באתר, למה הוא משמש, איך הוא נשמר ואיך אפשר לעיין בו או למחוק אותו.",
+  contents: `
+  <nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/">דף הבית</a><span aria-hidden="true">/</span><span aria-current="page">מדיניות פרטיות</span></nav>
+  <article class="reading-page">
+    <h1>מדיניות פרטיות</h1>
+    <p>עדכון אחרון <time datetime="2026-11-23">23 בנובמבר 2026</time>. האתר מופעל על ידי וילדורף יזמות בע״מ (שפע נדל״ן), סברדלוב 5, גדרה.</p>
+    <section><h2>איזה מידע אנחנו אוספים</h2><ul>
+      <li><strong>פרטים שאתם מוסרים בטפסים:</strong> שם, טלפון, דוא״ל (רשות), ופרטים על הנכס או על החיפוש שלכם - יישוב, תקציב, מספר חדרים, שטח והודעה חופשית.</li>
+      <li><strong>סטטיסטיקת שימוש כללית:</strong> מספר הצפיות בכל עמוד ומקור ההגעה (למשל Google או פייסבוק). הנתונים נספרים במצטבר בלבד, בלי כתובת IP ובלי מידע מזהה.</li>
+      <li><strong>עוגיות (Cookies):</strong> עוגייה טכנית אחת עם מזהה אקראי שמאפשרת לשמור את הפניות שלכם ואת טופסי התיווך, ועוגיית התחברות לצוות המשרד בלבד. איננו משתמשים בעוגיות פרסום או מעקב.</li>
+    </ul></section>
+    <section><h2>למה המידע משמש</h2><ul>
+      <li>כדי לחזור אליכם בעקבות הפנייה ולטפל בה.</li>
+      <li>כדי להציע לכם נכסים שמתאימים לחיפוש שלכם, אם ביקשתם עדכונים.</li>
+      <li>כדי לשפר את האתר ואת השירות.</li>
+    </ul><p>איננו מוכרים את המידע ואיננו מעבירים אותו לצד שלישי לצורכי שיווק.</p></section>
+    <section><h2>היכן המידע נשמר</h2><p>המידע נשמר במערכת המשרד, המאוחסנת אצל ספק ענן (Cloudflare). התראות על פניות חדשות נשלחות לצוות המשרד בדוא״ל באמצעות ספק שליחה (Resend). הגישה למידע מוגבלת לצוות המשרד בלבד ומוגנת בסיסמה ובחיבור מוצפן.</p></section>
+    <section><h2>כמה זמן נשמר המידע</h2><p>המידע נשמר כל עוד הוא נדרש לטיפול בפנייה ולמתן השירות, או לפי מה שנדרש בדין. אפשר לבקש את מחיקתו בכל עת.</p></section>
+    <section><h2>הזכויות שלכם</h2><p>לפי חוק הגנת הפרטיות, התשמ״א-1981, אתם רשאים לעיין במידע שנשמר עליכם, לבקש לתקן אותו או לבקש למחוק אותו, וכן לבקש שלא לקבל מאיתנו עדכונים. מסירת הפרטים אינה חובה, אך בלעדיהם לא נוכל לחזור אליכם.</p>
+      <p>לפניות בנושא פרטיות: טלפון <a class="inline-link" href="tel:+972527504037"><bdi>052-7504037</bdi></a> או <button class="text-button inline-link" type="button" data-contact>טופס יצירת קשר</button>.</p></section>
+  </article>`,
+});
+
 const accessibilityPage = layout({
   path: "/accessibility.html",
   title: "הצהרת נגישות",
@@ -263,6 +353,9 @@ for (const guide of guides) await writeFile(new URL(`guides/${guide.slug}.html`,
 await writeFile(new URL("accessibility.html", root), accessibilityPage);
 for (const town of towns) await writeFile(new URL(`areas/${townSlugs[town]}.html`, root), areaPage(town));
 await writeFile(new URL("valuation.html", root), valuationPage);
+await writeFile(new URL("about.html", root), aboutPage);
+await writeFile(new URL("mortgage.html", root), mortgagePage);
+await writeFile(new URL("privacy.html", root), privacyPage);
 
 const listingLinks = properties.map(property => `<article class="card static-listing"><h3><a href="${propertyUrl(property.id)}">${escaped(property.title)}</a></h3><p>${escaped(property.town)} · ${dealNames[property.deal]} · נכס לדוגמה</p></article>`).join("\n          ");
 const linkedHome = home.replace(/<!-- BEGIN LISTING LINKS -->[\s\S]*?<!-- END LISTING LINKS -->/, `<!-- BEGIN LISTING LINKS -->\n          ${listingLinks}\n        <!-- END LISTING LINKS -->`);

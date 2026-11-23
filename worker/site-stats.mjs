@@ -43,7 +43,7 @@ export async function statsReport(env,days,loadCatalog,towns) {
   ]);
   let titles={};
   try { titles=Object.fromEntries(((await (await loadCatalog()).json()).properties??[]).map(p=>[`/listing/${p.id}`,`${p.title} · ${p.town}`])); } catch {}
-  const label=path=>titles[path]||(path==="/"?"דף הבית":path==="/valuation.html"?"הערכת שווי":path==="/accessibility.html"?"הצהרת נגישות":
+  const label=path=>titles[path]||(path==="/"?"דף הבית":path==="/valuation.html"?"הערכת שווי":path==="/about.html"?"אודות":path==="/mortgage.html"?"מחשבון משכנתא":path==="/privacy.html"?"מדיניות פרטיות":path==="/accessibility.html"?"הצהרת נגישות":
     path.startsWith("/areas/")?`אזור: ${towns[path.slice(7,-5)]||path}`:path.startsWith("/guides/")?`מדריך: ${path.slice(8,-5)}`:
     path.startsWith("/properties/")?`נכס לדוגמה: ${path.slice(12,-5)}`:path.startsWith("/listing/")?"נכס שהוסר":path);
   const total=daily.results.reduce((sum,row)=>sum+row.views,0);

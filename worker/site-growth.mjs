@@ -9,7 +9,7 @@ export const aiCopyPath=new RegExp(`^/api/office/properties/(${ID})/ai-copy$`,"i
 // Pages Google may index. The demo property pages (/properties/*.html) stay out on purpose:
 // they show sample prices, so they should not appear in search results as real offers.
 export function isIndexable(path) {
-  return path==="/"||path==="/index.html"||path==="/accessibility.html"||path==="/valuation.html"||/^\/(guides|areas)\/[\w-]+\.html$/.test(path)||listingPath.test(path);
+  return path==="/"||path==="/index.html"||path==="/accessibility.html"||path==="/valuation.html"||path==="/about.html"||path==="/mortgage.html"||path==="/privacy.html"||/^\/(guides|areas)\/[\w-]+\.html$/.test(path)||listingPath.test(path);
 }
 const isPrivate=path=>/^\/(office|login|logout|visit|api)(\/|$|\.)/.test(path)||path.startsWith("/office.");
 
