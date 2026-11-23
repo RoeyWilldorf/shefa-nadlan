@@ -1,5 +1,5 @@
 import {mkdir, readFile, writeFile} from "node:fs/promises";
-import {properties, dealNames, towns, townSlugs} from "./dist/listings.mjs";
+import {properties, dealNames, towns, townSlugs, showSamples} from "./dist/listings.mjs";
 import {propertyUrl} from "./dist/engagement.mjs";
 
 const root = new URL("./dist/", import.meta.url);
@@ -180,7 +180,7 @@ function areaPage(town) {
     {"@type":"ListItem",position:1,name:"דף הבית",item:new URL("/", origin).href},
     {"@type":"ListItem",position:2,name:`נדל״ן ב${town}`,item:new URL(`/areas/${slug}.html`, origin).href}]};
   return layout({path: `/areas/${slug}.html`, title, description, image: "/media/hero.webp",
-    head: `  <script type="module" src="/area.mjs?v=1"></script>\n  <script type="application/ld+json">${JSON.stringify(crumbs)}</script>\n`,
+    head: `  <script type="module" src="/area.mjs?v=2"></script>\n  <script type="application/ld+json">${JSON.stringify(crumbs)}</script>\n`,
     contents: `
   <nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/">דף הבית</a><span aria-hidden="true">/</span><a href="/#areas">אזורים</a><span aria-hidden="true">/</span><span aria-current="page">${escaped(town)}</span></nav>
   <article class="area-page">
@@ -357,6 +357,6 @@ await writeFile(new URL("about.html", root), aboutPage);
 await writeFile(new URL("mortgage.html", root), mortgagePage);
 await writeFile(new URL("privacy.html", root), privacyPage);
 
-const listingLinks = properties.map(property => `<article class="card static-listing"><h3><a href="${propertyUrl(property.id)}">${escaped(property.title)}</a></h3><p>${escaped(property.town)} · ${dealNames[property.deal]} · נכס לדוגמה</p></article>`).join("\n          ");
+const listingLinks = (showSamples ? properties : []).map(property => `<article class="card static-listing"><h3><a href="${propertyUrl(property.id)}">${escaped(property.title)}</a></h3><p>${escaped(property.town)} · ${dealNames[property.deal]} · נכס לדוגמה</p></article>`).join("\n          ");
 const linkedHome = home.replace(/<!-- BEGIN LISTING LINKS -->[\s\S]*?<!-- END LISTING LINKS -->/, `<!-- BEGIN LISTING LINKS -->\n          ${listingLinks}\n        <!-- END LISTING LINKS -->`);
 if (linkedHome !== home) await writeFile(index, linkedHome);

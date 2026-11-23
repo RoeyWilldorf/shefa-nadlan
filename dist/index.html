@@ -43,7 +43,7 @@
   <link rel="icon" href="/media/shefa-round.webp" type="image/webp">
   <link rel="preload" href="media/hero.webp" as="image">
   <link rel="stylesheet" href="/styles.css?v=13">
-  <script type="module" src="/app.mjs?v=11"></script>
+  <script type="module" src="/app.mjs?v=12"></script>
   <script type="module" src="/site-tools.mjs"></script>
 </head>
 <body data-site-tools="public">
@@ -127,8 +127,8 @@
       <section id="listings" class="listings" aria-labelledby="listings-title">
         <div class="section-head">
           <div>
-            <h2 id="listings-title" tabindex="-1">נכסים לדוגמה</h2>
-            <p class="section-caption">הנכסים המסומנים "לדוגמה" מוצגים להמחשה בלבד.</p>
+            <h2 id="listings-title" tabindex="-1">נכסים למכירה ולהשכרה</h2>
+            <p class="section-caption">כל הנכסים שהמשרד משווק כרגע.</p>
           </div>
           <label class="sort"><span>מיון לפי</span><select id="sort"><option value="featured">סדר ברירת מחדל</option><option value="low">מחיר מהנמוך לגבוה</option><option value="high">מחיר מהגבוה לנמוך</option><option value="area">שטח מהגדול לקטן</option><option value="recent">נכסים חדשים תחילה</option></select></label>
         </div>
@@ -142,14 +142,9 @@
           <button class="button outline" type="button" id="search-load" disabled>טעינת חיפוש שמור</button>
           <span id="compare-status" role="status" class="sr-only"></span><span id="search-save-status" role="status"></span>
         </div>
-        <p class="field-error" id="catalog-error" role="status" hidden>כרגע לא ניתן לטעון את נכסי המשרד. כרטיסי הדוגמה מוצגים.</p>
+        <p class="field-error" id="catalog-error" role="status" hidden>כרגע לא ניתן לטעון את הנכסים. נסו לרענן את העמוד או התקשרו אלינו.</p>
         <div id="cards" class="cards"><!-- BEGIN LISTING LINKS -->
-          <article class="card static-listing"><h3><a href="/properties/gedera-01.html">דירת 4 חדרים עם מרפסת</a></h3><p>גדרה · למכירה · נכס לדוגמה</p></article>
-          <article class="card static-listing"><h3><a href="/properties/gedera-02.html">בית משפחתי עם חצר</a></h3><p>גדרה · למכירה · נכס לדוגמה</p></article>
-          <article class="card static-listing"><h3><a href="/properties/yavne-01.html">פנטהאוז עם מרפסת פתוחה</a></h3><p>יבנה · למכירה · נכס לדוגמה</p></article>
-          <article class="card static-listing"><h3><a href="/properties/bnei-ayish-01.html">דירת 3 חדרים מוארת</a></h3><p>בני עי״ש · להשכרה · נכס לדוגמה</p></article>
-          <article class="card static-listing"><h3><a href="/properties/mazkeret-01.html">דירת גן עם יציאה לחצר</a></h3><p>מזכרת בתיה · להשכרה · נכס לדוגמה</p></article>
-          <article class="card static-listing"><h3><a href="/properties/kiryat-ekron-01.html">דירת 4 חדרים בבניין נמוך</a></h3><p>קריית עקרון · להשכרה · נכס לדוגמה</p></article>
+          
         <!-- END LISTING LINKS --></div>
         <div id="empty" class="empty" hidden>
           <span class="empty-icon"><svg class="icon"><use href="#search"/></svg></span>

@@ -1,4 +1,6 @@
-import {properties as examples} from "./listings.mjs";
+import {properties as allExamples} from "./listings.mjs";
+const showSamples=false;
+const examples=showSamples?allExamples:[];
 
 const view=document.querySelector("#visit-view");
 const e=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));

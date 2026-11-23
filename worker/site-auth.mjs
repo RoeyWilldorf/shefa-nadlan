@@ -251,6 +251,8 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
     const innerHeaders=new Headers(headers); innerHeaders.delete("content-length"); innerHeaders.delete("content-type");
     const inner=(target,init2={})=>worker.fetch(new Request(new URL(target,url),{method:"GET",headers:innerHeaders,redirect:"manual",...init2}),innerEnv,ctx);
 
+    // Old sample-listing pages: send visitors to the real listings.
+    if (/^\/properties\/[\w-]+\.html$/.test(path)&&(method==="GET"||method==="HEAD")) return redirect("/#listings",{"Cache-Control":"public, max-age=3600"});
     if (path==="/robots.txt"&&method==="GET") return robotsTxt(url);
     if (path==="/sitemap.xml"&&method==="GET") return sitemapXml(url,guides,()=>inner("/api/catalog"));
     // ---- Facebook / Instagram publishing ----

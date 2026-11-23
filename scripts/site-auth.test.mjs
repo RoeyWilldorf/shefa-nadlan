@@ -53,7 +53,8 @@ test("public pages are indexable, demo and office pages are not",async()=>{
   assert.equal(home.headers.get("x-robots-tag"),null);
   assert.ok(!(await home.text()).includes('content="noindex'));
   const demo=await call("/properties/gedera-01.html");
-  assert.match(await demo.text(),/noindex/);
+  assert.equal(demo.status,303,"old sample listings redirect to the real ones");
+  assert.equal(demo.headers.get("location"),"/#listings");
   const login=await call("/login");
   assert.match(login.headers.get("x-robots-tag")||"",/noindex/);
 });

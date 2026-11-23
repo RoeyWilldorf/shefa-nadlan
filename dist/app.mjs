@@ -1,4 +1,6 @@
 import {towns, townSlugs, types, properties, dealNames, parsePrice, filterProperties} from "./listings.mjs";
+const showSamples = false; // sample listings stay hidden now that the office has real ones
+if (!showSamples) properties.splice(0, properties.length);
 
 import {initDialogs} from "./dialogs.mjs?v=11";
 import {bindEngagement, isSaved, propertyUrl, syncSavedControls} from "./engagement.mjs";
@@ -187,7 +189,7 @@ try {
     }
     if(query.get("town")&&[...filterField("town").options].some(option=>option.value===query.get("town"))) filterField("town").value=query.get("town");
     document.querySelector("#listings-title").textContent="נכסים למכירה ולהשכרה";
-    document.querySelector("#listings .section-caption").textContent="נכסי המשרד לצד כרטיסי הדוגמה המסומנים.";
+    document.querySelector("#listings .section-caption").textContent="כל הנכסים שהמשרד משווק כרגע.";
     renderResults();
   }
 } catch {

@@ -7,6 +7,9 @@ export const townSlugs = {"גדרה":"gedera","יבנה":"yavne","בני עי״�
 export const types = ["דירה", "בית פרטי", "דירת גן", "פנטהאוז"];
 export const dealNames = {sale: "למכירה", rent: "להשכרה"};
 
+// Sample listings used before the office had real ones. Kept for the brokerage-form demo and tests,
+// but hidden from the public site while showSamples is false.
+export const showSamples = false;
 export const properties = [
   {
     id: "gedera-01", deal: "sale", town: "גדרה", neighborhood: "גדרה הצעירה",
