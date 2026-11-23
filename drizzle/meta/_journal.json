@@ -50,6 +50,13 @@
       "when": 1795430000000,
       "tag": "0006_site_match_notices",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1795432000000,
+      "tag": "0007_site_stats",
+      "breakpoints": true
     }
   ]
 }

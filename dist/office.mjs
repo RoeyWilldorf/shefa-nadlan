@@ -12,7 +12,7 @@ const dialog=byId("office-dialog");
 const edit=byId("edit-body");
 const currency=new Intl.NumberFormat("he-IL");
 const time=new Intl.DateTimeFormat("he-IL",{dateStyle:"short",timeStyle:"short",timeZone:"Asia/Jerusalem"});
-const pageNames={dashboard:"סקירה",properties:"נכסים",leads:"לידים ולקוחות",work:"משימות וסיורים",deals:"עסקאות ועמלות",marketing:"סטודיו שיווק","visit-forms":"טופסי תיווך",prospects:"שפע מודיעין"};
+const pageNames={dashboard:"סקירה",properties:"נכסים",leads:"לידים ולקוחות",work:"משימות וסיורים",deals:"עסקאות ועמלות",marketing:"סטודיו שיווק",stats:"סטטיסטיקת אתר","visit-forms":"טופסי תיווך",prospects:"שפע מודיעין"};
 const safe=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt=value=>value?`<bdi>${currency.format(value)} ₪</bdi>`:"";
 const stamp=value=>value?time.format(new Date(value)):"";
@@ -76,8 +76,34 @@ function render() {
     ops.mountLedger(byId("deals-office"));
     return;
   }
+  if(page==="stats"){view.innerHTML=statsShell();loadStats(30);return;}
   view.innerHTML={dashboard,properties:propertiesPage,leads:leadsPage,work:workPage,marketing:marketingPage,"visit-forms":visitFormsPage}[page]();
 }
+// ---- Site statistics (page views, top pages, traffic sources) ----
+function statsShell() {
+  return `<div class="office-view-head"><p>כמה אנשים נכנסו לאתר, לאילו עמודים ומאיפה הגיעו. נספרים רק מבקרים (לא אתם), בלי עוגיות ובלי מידע מזהה.</p>
+  ${select("stats-days","תקופה",{7:"7 ימים אחרונים",30:"30 ימים אחרונים",90:"90 ימים אחרונים"},"30")}</div><div id="stats-body"><p>טוען נתונים…</p></div>`;
+}
+async function loadStats(days) {
+  const box=byId("stats-body");
+  try {
+    const response=await fetch(`/api/office/site-stats?days=${days}`);
+    const data=await response.json();
+    if(!response.ok) throw Error(data.error??"טעינת הסטטיסטיקה נכשלה.");
+    if(!box.isConnected) return;
+    const leads=state.leads.filter(l=>Date.now()-Date.parse(l.created_at)<days*86400000&&String(l.source||"").startsWith("אתר")).length;
+    const max=Math.max(1,...data.daily.map(d=>d.views));
+    const bars=data.daily.map(d=>`<div class="stats-bar" title="${safe(d.day)}: ${d.views}"><span style="height:${Math.round(d.views/max*100)}%"></span><small>${safe(d.day.slice(8))}.${safe(d.day.slice(5,7))}</small></div>`).join("");
+    const table=(rows,head,name)=>rows.length?`<table class="stats-table"><thead><tr><th>${head}</th><th>צפיות</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.path?`<a href="${safe(r.path)}" target="_blank" rel="noopener">${safe(r.label)}</a>`:safe(r[name])}</td><td>${r.views}</td></tr>`).join("")}</tbody></table>`:"<p>עוד אין נתונים לתקופה הזו.</p>";
+    box.innerHTML=`<div class="office-stats-grid">
+      <div class="office-stat"><strong>${data.total}</strong><span>צפיות בעמודים</span></div>
+      <div class="office-stat"><strong>${leads}</strong><span>פניות מהאתר</span></div>
+      <div class="office-stat"><strong>${data.total?((leads/data.total)*100).toFixed(1):"0"}%</strong><span>יחס פניות לצפיות</span></div></div>
+      ${data.daily.length?`<section class="office-panel"><h2>צפיות לפי יום</h2><div class="stats-bars" role="img" aria-label="גרף צפיות יומי">${bars}</div></section>`:""}
+      <div class="stats-columns">${panel("העמודים הנצפים ביותר",table(data.pages,"עמוד"))}${panel("מאיפה הגיעו המבקרים",table(data.sources,"מקור","source"))}</div>`;
+  } catch(problem) {if(box.isConnected) box.innerHTML=`<p class="office-error">${safe(problem.message)}</p>`;}
+}
+view.addEventListener("change",event=>{if(event.target.name==="stats-days") loadStats(Number(event.target.value));});
 function listLine(title,sub,actions) {
   return `<article class="office-item"><div><h3>${safe(title)}</h3><p class="office-small">${sub}</p></div>${actions}</article>`;
 }

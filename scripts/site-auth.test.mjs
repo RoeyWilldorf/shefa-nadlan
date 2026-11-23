@@ -120,3 +120,23 @@ test("office gets an email for a new lead and for leads matching a newly publish
     globalThis.fetch=realFetch; delete env.RESEND_API_KEY; delete env.NOTIFY_EMAIL;
   }
 });
+
+test("visitor page views are counted (not bots, not the office) and reported to the owner",async()=>{
+  const waits=[]; const ctx={waitUntil:p=>waits.push(p)};
+  const visit=(path,headers={})=>site.fetch(new Request(origin+path,{headers}),env,ctx);
+  await visit("/?utm_source=facebook");
+  await visit("/areas/rehovot.html",{referer:"https://www.google.com/"});
+  await visit("/areas/rehovot.html",{"user-agent":"Googlebot/2.1"});
+  await visit("/login");
+  await Promise.all(waits);
+  const login=await call("/login",{method:"POST",headers:{Origin:origin},body:new URLSearchParams({password:"correct horse"})});
+  const cookie=login.headers.get("set-cookie").split(";")[0];
+  assert.equal((await call("/api/office/site-stats")).status,403);
+  const report=await (await call("/api/office/site-stats?days=7",{headers:{cookie}})).json();
+  const rehovot=report.pages.find(p=>p.path==="/areas/rehovot.html");
+  assert.equal(rehovot.views,1,"bots are not counted");
+  assert.equal(rehovot.label,"אזור: רחובות");
+  assert.ok(!report.pages.some(p=>p.path==="/login"));
+  assert.ok(report.sources.some(s=>s.source==="Google"));
+  assert.ok(report.sources.some(s=>s.source==="Facebook"));
+});

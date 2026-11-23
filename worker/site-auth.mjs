@@ -13,6 +13,9 @@
 
 import {robotsTxt,sitemapXml,aiCopy,aiCopyPath,notFoundPage,publicHtml,publicHeaders} from "./site-growth.mjs";
 import {notifyReady,sendEmail,leadEmail,notifyMatches} from "./site-notify.mjs";
+import {countView,statsReport} from "./site-stats.mjs";
+import {townSlugs} from "../dist/listings.mjs";
+const slugTowns=Object.fromEntries(Object.entries(townSlugs).map(([town,slug])=>[slug,town]));
 
 const SESSION_COOKIE="shefa_session";
 const VISITOR_COOKIE="shefa_visitor";
@@ -249,6 +252,11 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
 
     if (path==="/robots.txt"&&method==="GET") return robotsTxt(url);
     if (path==="/sitemap.xml"&&method==="GET") return sitemapXml(url,guides,()=>inner("/api/catalog"));
+    if (path==="/api/office/site-stats"&&method==="GET") {
+      if (!owner) return new Response(JSON.stringify({error:"אזור המשרד זמין לבעל האתר לאחר התחברות."}),{status:403,headers:{"Content-Type":"application/json; charset=utf-8"}});
+      const days=[7,30,90].includes(Number(url.searchParams.get("days")))?Number(url.searchParams.get("days")):30;
+      return new Response(JSON.stringify(await statsReport(env,days,()=>inner("/api/catalog"),slugTowns)),{headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
+    }
     const ai=path.match(aiCopyPath);
     if (ai&&method==="POST") {
       if (!owner||!sameOrigin(request)) return new Response(JSON.stringify({error:"אזור המשרד זמין לבעל האתר לאחר התחברות."}),{status:403,headers:{"Content-Type":"application/json; charset=utf-8"}});
@@ -289,6 +297,7 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
     if ((h.get("content-type")||"").startsWith("text/html")) h.set("X-Frame-Options","SAMEORIGIN");
     if (url.protocol==="https:") h.set("Strict-Transport-Security","max-age=31536000");
     publicHeaders(response,path,env);
+    if (!owner&&response.status===200&&(response.headers.get("content-type")||"").startsWith("text/html")) later(countView(env,request,url));
     return response;
   }};
 }

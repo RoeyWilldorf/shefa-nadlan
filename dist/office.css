@@ -86,3 +86,17 @@
 .office-logout .office-exit{margin-top:4px;width:100%;background:none;font:inherit;cursor:pointer;text-align:start}
 .office-ai{margin-top:18px;background:#fbf7ec;border-color:#e9d7b3}
 .office-ai h3{margin:0 0 6px;font-size:1.1rem}
+.office-stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.office-stat{background:#fff;border:1px solid #dfe5dc;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column}
+.office-stat strong{font-size:1.7rem}
+.office-stat span{color:#53645a;font-size:.9rem}
+.stats-bars{display:flex;align-items:flex-end;gap:3px;height:160px;padding-top:6px;overflow-x:auto}
+.stats-bar{flex:1 0 14px;max-width:34px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+.stats-bar span{display:block;width:100%;min-height:2px;background:#264539;border-radius:3px 3px 0 0}
+.stats-bar small{font-size:.62rem;color:#6b7a70;margin-top:3px;white-space:nowrap}
+.stats-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.stats-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.stats-table th,.stats-table td{text-align:start;padding:6px 4px;border-bottom:1px solid #e6eae3}
+.stats-table td:last-child,.stats-table th:last-child{text-align:end;width:70px}
+.stats-table a{color:#264539;text-decoration:underline}
+@media (max-width:760px){.office-stats-grid,.stats-columns{grid-template-columns:1fr}}
