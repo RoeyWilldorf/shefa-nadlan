@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: shefa-nadlan
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: node scripts/serve-render.mjs
+    envVars:
+      - key: SITE_USER
+        value: shefa
+      - key: SITE_PASSWORD
+        generateValue: true
+      - key: OFFICE_OWNER_EMAIL
+        value: owner@shefa-nadlan.local
+      - key: DATA_DIR
+        value: /opt/render/project/src/.shefa-data
+    disk:
+      name: shefa-data
+      mountPath: /opt/render/project/src/.shefa-data
+      sizeGB: 1

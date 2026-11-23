@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>ניהול המשרד | שפע נדל״ן</title>
+  <link rel="icon" href="/media/shefa-round.webp" type="image/webp">
+  <link rel="stylesheet" href="/styles.css?v=10">
+  <script type="module" src="/site-tools.mjs"></script>
+  <link rel="stylesheet" href="/office.css?v=10">
+  <script type="module" src="/office.mjs?v=10"></script>
+</head>
+<body class="office-app" data-site-tools="office">
+  <a class="skip" href="#main-office">דילוג לתוכן הראשי</a>
+  <div class="office-shell">
+    <aside class="office-rail">
+      <a class="office-brand" href="/office"><img src="/media/shefa-round.webp" width="44" height="44" alt=""><span><strong>שפע נדל״ן</strong><small>ניהול המשרד</small></span></a>
+      <nav aria-label="ניווט במערכת הניהול" class="office-nav">
+        <a href="#dashboard">סקירה</a><a href="#properties">נכסים</a><a href="#leads">לידים ולקוחות</a><a href="#work">משימות וסיורים</a><a href="#deals">עסקאות ועמלות</a><a href="#marketing">סטודיו שיווק</a><a href="#visit-forms">טופסי תיווך</a><a href="#prospects">שפע מודיעין</a>
+      </nav>
+      <a class="office-exit" href="/">חזרה לאתר הנכסים <span aria-hidden="true">↗</span></a>
+    </aside>
+    <main id="main-office" tabindex="-1" class="office-main">
+      <div class="office-top"><p>אזור המשרד</p><div class="office-actions"><a class="button outline" href="/api/office/export">ייצוא נתונים (JSON)</a>
+      <a class="button outline" href="/api/office/backup">גיבוי מסד נתונים</a></div></div>
+      <h1 id="office-heading" tabindex="-1">סקירה</h1>
+      <p id="office-status" role="status" aria-live="polite">טוען נתונים…</p>
+      <p id="office-error" class="office-error" role="alert" hidden></p>
+      <div id="office-view"></div>
+    </main>
+  </div>
+  <dialog id="office-dialog"><div id="edit-body"></div></dialog>
+</body>
+</html>
