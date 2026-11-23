@@ -1,4 +1,5 @@
 import {propertyStates,leadStates,intents,channels,featureNames,supportedTypes,matchProperty} from "./office-model.mjs";
+import {preparePhoto} from "./photo-enhance.mjs";
 import {bindBrandStudio} from "./brand-studio.mjs";
 import {withBrandContacts} from "./brand.mjs";
 import {mountProspects} from "./prospect-office.mjs";
@@ -300,11 +301,13 @@ async function files(id,trigger) {
   showEdit("קבצים והיסטוריית מחירים",`<p class=office-small>${safe(result.property.title)}</p>
   <ul class="office-files">${fileList||"<li>טרם הועלו קבצים.</li>"}</ul>
   <form id="file-form"><div class="office-fields">
-  <label class="field"><span>קובץ · עד 6MB</span><input name="file" type="file" required accept="image/jpeg,image/png,image/webp,application/pdf"></label>
+  <label class="field"><span>קובץ · תמונות גדולות יוקטנו אוטומטית (PDF עד 6MB)</span><input name="file" type="file" required accept="image/jpeg,image/png,image/webp,application/pdf"></label>
   ${input("label","תיאור הקובץ. לתמונה תארו מה רואים בה","","required maxlength=120")}
   <label class="office-check wide"><input name="publicPhoto" type="checkbox"> למשרד יש הרשאה לשווק את התמונה ולהציגה בקטלוג כשהנכס פעיל</label>
+  <label class="office-check wide"><input name="enhance" type="checkbox" checked> ✨ שיפור אוטומטי של התמונה (תאורה, צבעים, חדות) והטבעת הלוגו בתמונה – מומלץ</label>
   <label class="office-check wide"><input name="alreadyBranded" type="checkbox"> כבר מופיע בתמונה הלוגו הרשמי של שפע נדל״ן</label>
-  </div><p class="office-error" role="alert" hidden></p>${actionRow('<button type="submit" class="button primary">העלאה</button>')}</form>
+  </div><div class="photo-compare" hidden><figure><img alt="התמונה המקורית"><figcaption>לפני</figcaption></figure><figure><img alt="התמונה אחרי שיפור ומיתוג"><figcaption>אחרי</figcaption></figure></div>
+  <p class="office-error" role="alert" hidden></p>${actionRow('<button type="submit" class="button primary">העלאה</button>')}</form>
   <details class="office-history"><summary>היסטוריית מחירים</summary><ul>${result.prices.map(p=>`<li>${fmt(p.price)} · ${stamp(p.recorded_at)}</li>`).join("")}</ul></details>`,trigger);
   for(const target of edit.querySelectorAll("[data-photo-flags]")) target.onclick=()=>{
     const f=result.files.find(item=>item.id===target.dataset.photoFlags);
@@ -325,13 +328,31 @@ async function files(id,trigger) {
       });
     };
   };
-  byId("file-form").addEventListener("submit",async event=>{
+  const fileForm=byId("file-form"), compare=fileForm.querySelector(".photo-compare");
+  let prepared=null;
+  async function previewPhoto() {
+    prepared=null;compare.hidden=true;
+    const file=fileForm.elements.file.files[0];
+    if(!file||!file.type.startsWith("image/")||!fileForm.elements.enhance.checked||fileForm.elements.alreadyBranded.checked) return;
+    const [before,after]=compare.querySelectorAll("img");
+    status.textContent="משפר את התמונה…";
+    try {
+      prepared=await preparePhoto(file);
+      before.src=URL.createObjectURL(file);after.src=URL.createObjectURL(prepared);
+      compare.hidden=false;status.textContent="התמונה שופרה ומותגה. אפשר להשוות ולהעלות.";
+    } catch {status.textContent="לא ניתן היה לשפר את התמונה. היא תועלה כפי שהיא.";}
+  }
+  for(const name of ["file","enhance","alreadyBranded"]) fileForm.elements[name].addEventListener("change",previewPhoto);
+  fileForm.addEventListener("submit",async event=>{
     event.preventDefault();
     const form=event.currentTarget;
     await submitting(form,async ()=>{
       const data=new FormData(form);
-      const search=new URLSearchParams({label:data.get("label"),public:data.has("publicPhoto")?"1":"0",branded:data.has("alreadyBranded")?"1":"0"});
-      await api(`properties/${id}/files?${search}`,{method:"POST",body:data.get("file")});
+      const file=data.get("file");
+      const useEnhanced=file?.type?.startsWith("image/")&&data.has("enhance")&&!data.has("alreadyBranded");
+      if(useEnhanced&&!prepared) prepared=await preparePhoto(file);
+      const search=new URLSearchParams({label:data.get("label"),public:data.has("publicPhoto")?"1":"0",branded:data.has("alreadyBranded")||useEnhanced?"1":"0"});
+      await api(`properties/${id}/files?${search}`,{method:"POST",body:useEnhanced?prepared:file});
       await files(id,trigger);
       status.textContent="הקובץ הועלה.";
     });

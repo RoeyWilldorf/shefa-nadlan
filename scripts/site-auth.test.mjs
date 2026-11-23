@@ -140,3 +140,13 @@ test("visitor page views are counted (not bots, not the office) and reported to 
   assert.ok(report.sources.some(s=>s.source==="Google"));
   assert.ok(report.sources.some(s=>s.source==="Facebook"));
 });
+
+test("photo enhancement brightens dark, flat photos without breaking pixels",async()=>{
+  const {enhancePixels}=await import("../dist/photo-enhance.mjs");
+  const n=5000,d=new Uint8ClampedArray(n*4);
+  for(let i=0;i<n;i++){const v=40+(i%60);d.set([v,v+5,v+20,255],i*4);}
+  const mean=()=>{let s=0;for(let i=0;i<d.length;i+=4)s+=d[i]+d[i+1]+d[i+2];return s/n/3;};
+  const before=mean(); enhancePixels(d); const after=mean();
+  assert.ok(after>before+20,`expected brighter (${before} -> ${after})`);
+  for(let i=3;i<d.length;i+=4) assert.equal(d[i],255);
+});
