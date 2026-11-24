@@ -207,7 +207,7 @@ function controls(p) {
   <p class="office-small">יש להזין מזהה שמאפשר ללקוח לזהות את הנכס. השדה יוצג לעיון בטופס ויישמר בעותק החתום.</p></div>
   ${select("deal","סוג עסקה",{sale:"מכירה",rent:"השכרה"},p?.deal??"sale")}${select("type","סוג נכס",Object.fromEntries(supportedTypes.map(x=>[x,x])),p?.property_type??"דירה")}
   ${input("price","מחיר בש״ח",p?.price,'type=number min=1 step=1 required')}${input("rooms","חדרים",p?.rooms,range)}
-  ${input("area","שטח בנוי (מ״ר)",p?.area,range)}${input("additionalArea","שטח נוסף (מ״ר)",x.additionalArea,range)}
+  ${input("area","שטח בנוי (מ״ר)",p?.area,range)}${input("additionalArea","שטח נוסף (מ״ר)",x.additionalArea,range)}${input("lotArea","שטח מגרש (מ״ר) · לבתים ומגרשים",x.lotArea,range)}
   ${input("floor","קומה",x.floor,'type=number min=-10 max=200')}${input("floorCount","מספר קומות",x.floorCount,'type=number min=0 max=200')}
   ${input("condition","מצב הנכס",x.condition,'maxlength="90"')}${input("availableOn","תאריך פינוי",x.availableOn,'type=date')}
   ${Object.entries(featureNames).map(([key,label])=>select(key,label,{"":"לא נבדק",yes:"כן",no:"לא"},x[key]===true?"yes":x[key]===false?"no":"")).join("")}

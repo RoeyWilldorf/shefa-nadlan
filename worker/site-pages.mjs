@@ -12,7 +12,7 @@ const unesc = value => value.replace(/&quot;/g, '"').replace(/&#39;/g, "'").repl
 
 export function listingCard(p, index = 0) {
   const href = `/listing/${p.id}`;
-  const facts = [p.rooms && `${p.rooms} חד׳`, p.area && `${new Intl.NumberFormat("he-IL").format(p.area)} מ״ר`].filter(Boolean);
+  const facts = [p.rooms && `${p.rooms} חד׳`, p.area && `${new Intl.NumberFormat("he-IL").format(p.area)} מ״ר`, p.lotArea && p.type !== "מגרש" && `מגרש ${new Intl.NumberFormat("he-IL").format(p.lotArea)} מ״ר`].filter(Boolean);
   return `<article class="card listing-card"><div class="card-media">${p.image ? `<img src="${esc(p.image)}" alt="${esc(p.alt || p.title)}" ${index > 2 ? 'loading="lazy"' : ""} width="760" height="570">` : `<div class="card-no-photo">${icon("home")}<span>תמונות בקרוב</span></div>`}
     <div class="badges"><span class="tag tag-${p.deal}">${p.deal === "rent" ? "להשכרה" : "למכירה"}</span>${p.status === "negotiation" ? '<span class="tag tag-hot">במשא ומתן</span>' : ""}</div></div>
     <div class="card-body"><p class="price"><bdi>${nis(p.price)}</bdi>${p.deal === "rent" ? " <small>לחודש</small>" : ""}</p>

@@ -124,7 +124,7 @@ function publicProperty(row) {
     price:row.price, rooms:row.rooms, area:row.area, description:row.description, publishedAt:row.published_at,
     status:row.status, image:row.cover?`/listing-media/${row.cover}`:"", alt:row.cover?(row.cover_label||`תצלום: ${row.title}`):"",
     amenities:Object.entries(featureNames).filter(([key])=>specs[key]===true).map(([,label])=>label),
-    floor:specs.floor??null, floorCount:specs.floorCount??null, additionalArea:specs.additionalArea??null,
+    floor:specs.floor??null, floorCount:specs.floorCount??null, additionalArea:specs.additionalArea??null, lotArea:specs.lotArea??null,
     availableOn:specs.availableOn??null, condition:specs.condition??"",
   };
 }
@@ -139,7 +139,7 @@ function validateProperty(data) {
   if (price<1 || !Number.isInteger(price)) fail(400,"יש להזין מחיר בשקלים שלמים.");
   const specs={
     floor:data.floor===""||data.floor==null?null:Number(data.floor),
-    floorCount:numeric(data.floorCount,200),additionalArea:numeric(data.additionalArea,100000),
+    floorCount:numeric(data.floorCount,200),additionalArea:numeric(data.additionalArea,100000),lotArea:numeric(data.lotArea,10000000),
     condition:clean(data.condition,90),availableOn:dateOrNull(data.availableOn),
   };
   if (specs.floor!==null&&(!Number.isInteger(specs.floor)||specs.floor<-10||specs.floor>200)) fail(400,"הקומה אינה תקינה.");
@@ -495,9 +495,9 @@ async function listingPage(env,id,url,assets) {
     :`<div class="listing-gallery empty">${icon("home")}<p>תמונות יעלו בקרוב · אפשר לבקש תמונות נוספות ב־WhatsApp</p></div>`;
   const floorText=property.floor===null?"":property.floor===0?"קרקע":`${property.floor}${property.floorCount?` מתוך ${property.floorCount}`:""}`;
   const keyFacts=[
-    ["סוג נכס",property.type],["חדרים",property.rooms||""],["שטח",property.area?`${currency.format(property.area)} מ״ר`:""],
+    ["סוג נכס",property.type],["חדרים",property.rooms||""],[property.lotArea?"שטח בנוי":"שטח",property.area?`${currency.format(property.area)} מ״ר`:""],["שטח מגרש",property.lotArea&&property.type!=="מגרש"?`${currency.format(property.lotArea)} מ״ר`:""],
     ["קומה",floorText],["מצב",property.condition],
-    ["מחיר למ״ר",property.deal==="sale"&&property.area&&property.type!=="מגרש"?nis(Math.round(property.price/property.area)):""],
+    ["מחיר למ״ר",property.deal==="sale"&&property.area&&!property.lotArea&&property.type!=="מגרש"?nis(Math.round(property.price/property.area)):""],
     ["כניסה",property.availableOn?property.availableOn.split("-").reverse().join("."):""],
   ].filter(([,v])=>v!==""&&v!=null);
   const factsHtml=`<dl class="key-facts">${keyFacts.map(([k,v])=>`<div><dt>${k}</dt><dd>${escaped(v)}</dd></div>`).join("")}</dl>`;
@@ -516,7 +516,7 @@ async function listingPage(env,id,url,assets) {
   const similarHtml=similar.length?`<section class="listing-section similar" aria-labelledby="similar-title"><h2 id="similar-title">נכסים נוספים שיכולים לעניין אותך</h2>
       <div class="cards">${similar.map(p=>{
         const href=`/listing/${p.id}`;
-        const facts=[p.rooms&&`${p.rooms} חד׳`,p.area&&`${currency.format(p.area)} מ״ר`].filter(Boolean);
+        const facts=[p.rooms&&`${p.rooms} חד׳`,p.area&&`${currency.format(p.area)} מ״ר`,p.lotArea&&p.type!=="מגרש"&&`מגרש ${currency.format(p.lotArea)} מ״ר`].filter(Boolean);
         return `<article class="card listing-card"><div class="card-media">${p.image?`<img src="${p.image}" alt="${escaped(p.alt)}" loading="lazy" width="760" height="570">`:`<div class="card-no-photo">${icon("home")}<span>תמונות בקרוב</span></div>`}
           <div class="badges"><span class="tag tag-${p.deal}">${p.deal==="rent"?"להשכרה":"למכירה"}</span></div></div>
           <div class="card-body"><p class="price"><bdi>${nis(p.price)}</bdi>${p.deal==="rent"?" <small>לחודש</small>":""}</p>

@@ -55,6 +55,7 @@ function propertyCard(property, index) {
   const facts = [
     property.rooms ? `${property.rooms} חד׳` : "",
     property.area ? `${number.format(property.area)} מ״ר` : "",
+    property.lotArea && property.type !== "מגרש" ? `מגרש ${number.format(property.lotArea)} מ״ר` : "",
     property.floor === 0 ? "קומת קרקע" : property.floor ? `קומה ${property.floor}` : "",
   ].filter(Boolean);
   return `<article class="card listing-card" aria-labelledby="title-${property.id}">

@@ -114,7 +114,7 @@ function facts(p) {
     `סוג עסקה: ${p.deal==="rent"?"להשכרה":"למכירה"}`,
     `סוג נכס: ${p.property_type||p.type||""}`,
     `יישוב: ${p.town}`,p.neighborhood&&`שכונה: ${p.neighborhood}`,
-    p.rooms&&`חדרים: ${p.rooms}`,p.area&&`שטח: ${p.area} מ״ר`,specs.additionalArea&&`שטח נוסף (מרפסת/חצר): ${specs.additionalArea} מ״ר`,
+    p.rooms&&`חדרים: ${p.rooms}`,p.area&&`שטח: ${p.area} מ״ר`,specs.additionalArea&&`שטח נוסף (מרפסת/חצר): ${specs.additionalArea} מ״ר`,specs.lotArea&&`שטח המגרש: ${specs.lotArea} מ״ר`,
     specs.floor!=null&&specs.floor!==""&&`קומה: ${specs.floor}${specs.floorCount?` מתוך ${specs.floorCount}`:""}`,
     `מחיר: ${nis.format(p.price)} ₪${p.deal==="rent"?" לחודש":""}`,
     specs.condition&&`מצב הנכס: ${specs.condition}`,specs.availableOn&&`כניסה: ${specs.availableOn}`,

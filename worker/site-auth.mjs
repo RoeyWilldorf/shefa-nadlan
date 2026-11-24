@@ -304,7 +304,7 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
       const d=await request.json().catch(()=>({}));
       const text=(value,max)=>typeof value==="string"?value.trim().slice(0,max):"";
       const number=value=>Number.isFinite(Number(value))&&value!==""?Number(value):null;
-      const specs={additionalArea:number(d.additionalArea),floor:number(d.floor),floorCount:number(d.floorCount),condition:text(d.condition,90),availableOn:text(d.availableOn,20)};
+      const specs={additionalArea:number(d.additionalArea),lotArea:number(d.lotArea),floor:number(d.floor),floorCount:number(d.floorCount),condition:text(d.condition,90),availableOn:text(d.availableOn,20)};
       for (const key of ["lift","parking","shelter","balcony","storage","yard"]) specs[key]=d[key]==="yes";
       const property={deal:d.deal==="rent"?"rent":"sale",property_type:text(d.type,40),town:text(d.town,70),neighborhood:text(d.neighborhood,95),
         rooms:number(d.rooms),area:number(d.area),price:number(d.price)||0,description:text(d.description,3000),specs,status:"draft"};
