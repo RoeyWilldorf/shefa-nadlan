@@ -36,7 +36,7 @@ function layout({path, title, description, contents, image, head = ""}) {
   <meta property="og:url" content="${url.href}">
   ${image ? `<meta property="og:image" content="${new URL(image, origin).href}">` : ""}
   <link rel="icon" href="/media/shefa-round.webp" type="image/webp">
-  <link rel="stylesheet" href="/styles.css?v=23">
+  <link rel="stylesheet" href="/styles.css?v=24">
   <script type="module" src="/page.mjs?v=10"></script>
   <script type="module" src="/site-tools.mjs?v=3"></script>
 ${head}</head>
@@ -354,7 +354,7 @@ const accessibilityPage = layout({
   <article class="reading-page">
     <h1>הצהרת נגישות</h1>
     <p class="reading-lead">שפע נדל״ן פועלת להנגיש את האתר ואת שירותי המשרד לאנשים עם מוגבלות.</p>
-    <p>עדכון אחרון <time datetime="2026-11-23">23 בנובמבר 2026</time>.</p>
+    <p>עדכון אחרון <time datetime="2026-11-24">24 בנובמבר 2026</time>.</p>
     <section><h2>שימוש באתר</h2><ul>
       <li>אפשר לדלג מהחלק העליון של העמוד לתוכן הראשי.</li>
       <li>קישורים וכפתורים מציגים סימון מיקוד במעבר באמצעות Tab. אפשר לסגור חלונות באמצעות Escape.</li>
@@ -363,7 +363,8 @@ const accessibilityPage = layout({
     </ul></section>
     <section><h2>תקנים ומצב הבדיקות</h2><p>בדיקת האתר מביאה בחשבון את ת״י 5568 ברמת AA ואת תקנות נגישות השירות, לפי תחולתן. <bdi lang="en">WCAG 2.2 AA</bdi> משמש יעד פיתוח נוסף. בגרסה זו נבדקו מסלולים במקלדת ובדפדפן Chrome, כולל תצוגה המדמה מסכים צרים. התאמה מלאה לתקן, בדיקות במכשירים אמיתיים ובדיקות קוראי מסך עדיין טעונות אימות.</p><p><a class="inline-link" href="https://www.gov.il/he/pages/declaration_website_accessibility">הנחיות הנציבות על הצהרת נגישות</a></p></section>
     <section><h2>מסמכים והתאמות בשירות</h2><p>אפשר לבקש מסמך תיווך בפורמט נגיש או תיאום סיור באמצעות המשרד. נגישות מלאה של קובצי ה־PDF עדיין בבדיקה. הסדרי הגעה, חניה, כניסה וקבלת שירות במשרד טרם אומתו. אפשר לפנות למשרד לפני הגעה לבירור ולתיאום התאמה.</p></section>
-    <section><h2>דיווח ובקשה להתאמה</h2><p>בטופס אפשר לכתוב באיזה עמוד נתקלתם בקושי ומה ניסיתם לעשות. הפנייה פותחת משימה במשרד. אפשר גם להתקשר אל <a class="inline-link" href="tel:+972527504037">רועי <bdi>052-7504037</bdi></a> או אל <a class="inline-link" href="tel:+972527504034">שרל <bdi>052-7504034</bdi></a>. פרטי רכז נגישות יושלמו אם חלה חובה למנותו.</p><button type="button" class="button primary" data-contact="access">דיווח על תקלה או בקשת התאמה</button></section>
+    <section><h2>דיווח ובקשה להתאמה</h2><p>בטופס אפשר לכתוב באיזה עמוד נתקלתם בקושי ומה ניסיתם לעשות. הפנייה פותחת משימה במשרד. אפשר גם להתקשר אל <a class="inline-link" href="tel:+972527504034">שרל <bdi>052-7504034</bdi></a>.</p>
+      <div class="content-card access-coordinator"><h3>רכז הנגישות</h3><p><strong>רועי ווילדורף</strong><br>טלפון: <a class="inline-link" href="tel:+972527504037"><bdi>052-7504037</bdi></a><br>כתובת: סברדלוב 5, גדרה</p></div><button type="button" class="button primary" data-contact="access">דיווח על תקלה או בקשת התאמה</button></section>
   </article>`,
 });
 

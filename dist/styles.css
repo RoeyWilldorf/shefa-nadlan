@@ -842,3 +842,4 @@ html.display-motion,html.display-motion *,html.display-motion *::before,html.dis
 .agent-rating span{color:#e0a400}
 @media(max-width:900px){.reviews-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.reviews-grid{grid-template-columns:minmax(0,1fr)}}
+.access-coordinator{padding:16px 18px;margin:12px 0;max-width:420px}.access-coordinator h3{margin:0 0 6px}.access-coordinator p{margin:0;line-height:1.8}
