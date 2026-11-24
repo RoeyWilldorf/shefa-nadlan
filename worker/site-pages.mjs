@@ -25,6 +25,26 @@ function itemList(list, origin) {
   return `<script type="application/ld+json">${JSON.stringify(data).replace(/</g, "\\u003c")}</script>`;
 }
 
+export function soldCard(p) {
+  const when = p.closedAt ? new Intl.DateTimeFormat("he-IL", {month: "long", year: "numeric"}).format(new Date(p.closedAt)) : "";
+  const facts = [p.rooms && `${p.rooms} חד׳`, p.area && `${new Intl.NumberFormat("he-IL").format(p.area)} מ״ר`].filter(Boolean);
+  return `<article class="card listing-card sold-card"><div class="card-media">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" width="760" height="570">` : `<div class="card-no-photo">${icon("home")}</div>`}
+    <div class="badges"><span class="tag tag-sold">${p.status === "rented" ? "הושכר" : "נמכר"}</span></div></div>
+    <div class="card-body"><h3>${esc(p.title)}</h3><p class="location">${icon("pin")}${esc([p.town, p.neighborhood].filter(Boolean).join(" · "))}</p>
+    <p class="card-facts">${facts.map(f => `<span>${f}</span>`).join("")}${when ? `<span>${esc(when)}</span>` : ""}</p></div></article>`;
+}
+
+// Fills <div id="sold-listings"><!--SOLD--></div> and reveals its hidden section when there are closed deals.
+export async function injectSold(html, loadSold) {
+  if (!html.includes("<!--SOLD-->")) return html;
+  try {
+    const response = await loadSold();
+    const list = response.ok ? (await response.json()).properties ?? [] : [];
+    if (!list.length) return html;
+    return html.replace("<!--SOLD-->", list.map(soldCard).join("")).replace('<section class="sold-section" hidden', '<section class="sold-section"');
+  } catch { return html; }
+}
+
 export async function injectListings(html, loadCatalog, origin) {
   const area = html.match(/<div id="area-listings"[^>]*><!--SSR--><\/div>/);
   const home = html.includes("<!-- BEGIN LISTING LINKS -->");

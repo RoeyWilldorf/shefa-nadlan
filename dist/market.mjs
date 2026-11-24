@@ -9,7 +9,7 @@ const SITE="https://www.nadlan.gov.il/";
 
 const clean=value=>String(value||"").replace(/\(.*?\)/g," ").replace(/[^א-ת]/g,"");
 
-async function get(path) {
+export async function get(path) {
   const response=await fetch(`${DATA}/${path}`,{signal:AbortSignal.timeout(8000)});
   if (!response.ok) throw Error(`nadlan ${response.status} ${path}`);
   return response.json();
@@ -30,10 +30,10 @@ export function findNeighborhood(list,neighborhood) {
   return (list||[]).find(n=>{const name=clean(n.title);return name&&(name===want||name===inner||(want&&want.includes(name)&&name.length>3));})||null;
 }
 
-const quarter=({year,month})=>`רבעון ${Math.ceil(month/3)} ${year}`;
+export const quarter=({year,month})=>`רבעון ${Math.ceil(month/3)} ${year}`;
 
 // Picks the newest quarter that has a value for `key` (within the last two years).
-function latest(graph,key) {
+export function latest(graph,key) {
   const point=(graph||[]).slice(0,8).find(p=>p[key]);
   return point?{price:point[key],country:point.countryPrice||null,when:quarter(point),year:point.year,month:point.month}:null;
 }

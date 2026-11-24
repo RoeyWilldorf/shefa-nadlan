@@ -15,10 +15,11 @@
   <meta property="og:url" content="https://shefa-nadlan-gedera.roivil13.chatgpt.site/valuation.html">
   <meta property="og:image" content="https://shefa-nadlan-gedera.roivil13.chatgpt.site/media/hero.webp">
   <link rel="icon" href="/media/shefa-round.webp" type="image/webp">
-  <link rel="stylesheet" href="/styles.css?v=21">
+  <link rel="stylesheet" href="/styles.css?v=22">
   <script type="module" src="/page.mjs?v=10"></script>
   <script type="module" src="/site-tools.mjs?v=3"></script>
   <script type="module" src="/valuation.mjs?v=1"></script>
+  <script type="module" src="/quick-value.mjs?v=1"></script>
 </head>
 <body data-site-tools="public">
   <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -72,6 +73,18 @@
     <p class="reading-lead">ספרו לנו כמה פרטים על הדירה או הבית, ונחזור אליכם עם הערכת מחיר מבוססת עסקאות שנחתמו באזור - בלי עלות ובלי התחייבות.</p>
     <div class="action-row"><button class="button primary" type="button" data-contact="valuation" id="valuation-start">לקבלת הערכת שווי</button>
       <a class="button outline" href="tel:+972527504034">או התקשרו: <bdi>052-7504034</bdi></a></div>
+    <section class="quick-value content-card" aria-labelledby="quick-value-title">
+      <h2 id="quick-value-title">בדיקה מיידית: במה נמכרו דירות כמו שלכם?</h2>
+      <p>בחרו יישוב, שכונה ומספר חדרים, וראו את מחירי העסקאות האחרונות לפי נתוני רשות המסים.</p>
+      <form id="quick-value" class="quick-value-form">
+        <label class="field"><span>יישוב</span><input name="town" list="quick-towns" required autocomplete="address-level2" placeholder="למשל: גדרה"></label>
+        <datalist id="quick-towns"><option value="גדרה"><option value="יבנה"><option value="בני עי״ש"><option value="מזכרת בתיה"><option value="קריית עקרון"><option value="גן יבנה"><option value="רחובות"><option value="יישובי גדרות"><option value="אשדוד"><option value="אשקלון"><option value="קריית גת"><option value="ראשון לציון"><option value="בת ים"><option value="תל אביב"></datalist>
+        <label class="field"><span>שכונה (רשות)</span><select name="neighborhood"><option value="">כל העיר</option></select></label>
+        <label class="field"><span>מספר חדרים</span><select name="rooms"><option value="3">3 חדרים</option><option value="4" selected>4 חדרים</option><option value="5">5 חדרים</option><option value="all">אחר / בית פרטי</option></select></label>
+        <button class="button primary" type="submit">הצגת מחירים</button>
+      </form>
+      <div id="quick-value-result" class="quick-value-result" role="status" aria-live="polite" hidden></div>
+    </section>
     <section><h2>מה כוללת הערכת השווי?</h2><ul>
       <li>השוואה לעסקאות מכר או שכירות שנחתמו באזור, בנכסים דומים בשטח ובמאפיינים.</li>
       <li>טווח מחיר מומלץ לשיווק, והסבר מה מעלה ומה מוריד את המחיר של הנכס שלכם.</li>

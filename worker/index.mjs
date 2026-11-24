@@ -542,7 +542,7 @@ async function listingPage(env,id,url,assets) {
           <section class="listing-section" aria-labelledby="about-title"><h2 id="about-title">על הנכס</h2>
             <p class="listing-description">${escaped(property.description)}</p></section>
           ${amenities}
-          ${property.type==="מגרש"?"":`<div id="market-box" data-town="${escaped(property.town)}" data-neighborhood="${escaped(property.neighborhood||"")}" data-type="${escaped(property.type)}" data-rooms="${property.rooms||""}" data-deal="${property.deal}"></div><script type="module" src="/market.mjs?v=2"></script>`}
+          ${property.type==="מגרש"?"":`<div id="market-box" data-town="${escaped(property.town)}" data-neighborhood="${escaped(property.neighborhood||"")}" data-type="${escaped(property.type)}" data-rooms="${property.rooms||""}" data-deal="${property.deal}"></div><script type="module" src="/market.mjs?v=3"></script>`}
           ${comparablesHtml}
         </div>
         <aside class="listing-aside" aria-label="מחיר ויצירת קשר">
@@ -593,6 +593,13 @@ export function makeWorker(assets) {
       if (path==="/api/health"&&method==="GET") {
         const info=await first(env.DB,"SELECT count(*) AS count FROM sqlite_schema WHERE type='table' AND name IN ('office_properties','office_leads','office_work','office_media','office_comparables')");
         return json({database:info?.count===5,storage:Boolean(env.BUCKET),officeConfigured:Boolean(env.OFFICE_OWNER_EMAIL)});
+      }
+      if (path==="/api/sold"&&method==="GET") {
+        // Recently closed deals that were shown on the site: proof of results for sellers. No prices.
+        const sold=await rows(env.DB,`SELECT p.id,p.title,p.town,p.neighborhood,p.deal,p.property_type,p.rooms,p.area,p.status,p.updated_at,
+          (SELECT id FROM office_media m WHERE m.property_id=p.id AND m.public_photo=1 ORDER BY m.created_at,m.id LIMIT 1) AS cover
+          FROM office_properties p WHERE p.status IN ('sold','rented') AND p.published_at IS NOT NULL ORDER BY p.updated_at DESC LIMIT 12`);
+        return json({properties:sold.map(r=>({id:r.id,title:r.title,town:r.town,neighborhood:r.neighborhood,deal:r.deal,type:r.property_type,rooms:r.rooms,area:r.area,status:r.status,closedAt:r.updated_at,image:r.cover?`/listing-media/${r.cover}`:""}))});
       }
       if (path==="/api/catalog"&&method==="GET") return json({properties:(await rows(env.DB,`${catalogSql} ORDER BY p.published_at DESC LIMIT 250`)).map(publicProperty)});
       if (path==="/visit"&&["GET","HEAD"].includes(method)) return serveAsset(assets["/visit.html"],method);

@@ -35,7 +35,7 @@ function layout({path, title, description, contents, image, head = ""}) {
   <meta property="og:url" content="${url.href}">
   ${image ? `<meta property="og:image" content="${new URL(image, origin).href}">` : ""}
   <link rel="icon" href="/media/shefa-round.webp" type="image/webp">
-  <link rel="stylesheet" href="/styles.css?v=21">
+  <link rel="stylesheet" href="/styles.css?v=22">
   <script type="module" src="/page.mjs?v=10"></script>
   <script type="module" src="/site-tools.mjs?v=3"></script>
 ${head}</head>
@@ -213,7 +213,7 @@ const valuationPage = layout({
   title: "כמה שווה הדירה שלי? הערכת שווי לנכס",
   description: "רוצים לדעת כמה שווה הדירה או הבית שלכם? השאירו פרטים וקבלו הערכת שווי מבוססת עסקאות באזור משפע נדל״ן - בלי התחייבות.",
   image: "/media/hero.webp",
-  head: `  <script type="module" src="/valuation.mjs?v=1"></script>\n`,
+  head: `  <script type="module" src="/valuation.mjs?v=1"></script>\n  <script type="module" src="/quick-value.mjs?v=1"></script>\n`,
   contents: `
   <nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/">דף הבית</a><span aria-hidden="true">/</span><span aria-current="page">הערכת שווי</span></nav>
   <article class="reading-page valuation-page">
@@ -221,6 +221,18 @@ const valuationPage = layout({
     <p class="reading-lead">ספרו לנו כמה פרטים על הדירה או הבית, ונחזור אליכם עם הערכת מחיר מבוססת עסקאות שנחתמו באזור - בלי עלות ובלי התחייבות.</p>
     <div class="action-row"><button class="button primary" type="button" data-contact="valuation" id="valuation-start">לקבלת הערכת שווי</button>
       <a class="button outline" href="tel:+972527504034">או התקשרו: <bdi>052-7504034</bdi></a></div>
+    <section class="quick-value content-card" aria-labelledby="quick-value-title">
+      <h2 id="quick-value-title">בדיקה מיידית: במה נמכרו דירות כמו שלכם?</h2>
+      <p>בחרו יישוב, שכונה ומספר חדרים, וראו את מחירי העסקאות האחרונות לפי נתוני רשות המסים.</p>
+      <form id="quick-value" class="quick-value-form">
+        <label class="field"><span>יישוב</span><input name="town" list="quick-towns" required autocomplete="address-level2" placeholder="למשל: גדרה"></label>
+        <datalist id="quick-towns">${towns.map(t => `<option value="${escaped(t)}">`).join("")}</datalist>
+        <label class="field"><span>שכונה (רשות)</span><select name="neighborhood"><option value="">כל העיר</option></select></label>
+        <label class="field"><span>מספר חדרים</span><select name="rooms"><option value="3">3 חדרים</option><option value="4" selected>4 חדרים</option><option value="5">5 חדרים</option><option value="all">אחר / בית פרטי</option></select></label>
+        <button class="button primary" type="submit">הצגת מחירים</button>
+      </form>
+      <div id="quick-value-result" class="quick-value-result" role="status" aria-live="polite" hidden></div>
+    </section>
     <section><h2>מה כוללת הערכת השווי?</h2><ul>
       <li>השוואה לעסקאות מכר או שכירות שנחתמו באזור, בנכסים דומים בשטח ובמאפיינים.</li>
       <li>טווח מחיר מומלץ לשיווק, והסבר מה מעלה ומה מוריד את המחיר של הנכס שלכם.</li>
@@ -262,6 +274,7 @@ const aboutPage = layout({
       <p class="about-closing">נשמח לקבל פניות מכם ולהציע לכם את שירותינו למכירה או לקניית בית חלומותיכם! חברת שפע נדל״ן על כלל סוכניה עומדת לרשותכם בכל עת.</p>
       <div class="action-row"><a class="button primary" href="/valuation.html">כמה שווה הנכס שלי?</a><button class="button outline" type="button" data-contact>יצירת קשר</button><a class="button outline" href="/#listings">לנכסים שלנו</a></div>
     </div>
+    <section class="sold-section" hidden aria-labelledby="sold-title"><h2 id="sold-title">נמכרו והושכרו לאחרונה</h2><p class="section-caption">נכסים שליווינו עד החתימה. רוצים שגם הנכס שלכם יופיע כאן? <a class="inline-link" href="/valuation.html">הערכת שווי חינם</a></p><div id="sold-listings" class="cards"><!--SOLD--></div></section>
   </article>`,
 });
 
@@ -474,8 +487,8 @@ function calculatorPage(calc) {
 
 // ---------- Gedera landing pages: sale / rent / neighborhoods ----------
 const hoodLinks = current => `<nav class="related-links" aria-label="שכונות בגדרה"><h2>שכונות בגדרה</h2><div class="town-links">${gederaNeighborhoods.filter(n => n.slug !== current).map(n => `<a href="/areas/${n.slug}.html">${escaped(n.name)}</a>`).join("")}</div></nav>`;
-const marketBox = (type, deal) => `<div id="market-box" data-town="גדרה" data-neighborhood="" data-type="${type}" data-rooms="" data-deal="${deal}"></div><script type="module" src="/market.mjs?v=2"></script>`;
-const hoodMarketBox = hood => `<div id="market-box" data-town="גדרה" data-neighborhood="${escaped(hood.aliases[0])}" data-type="${hood.kind === "apartments" ? "דירה" : "בית פרטי"}" data-rooms="" data-deal="sale"></div><script type="module" src="/market.mjs?v=2"></script>`;
+const marketBox = (type, deal) => `<div id="market-box" data-town="גדרה" data-neighborhood="" data-type="${type}" data-rooms="" data-deal="${deal}"></div><script type="module" src="/market.mjs?v=3"></script>`;
+const hoodMarketBox = hood => `<div id="market-box" data-town="גדרה" data-neighborhood="${escaped(hood.aliases[0])}" data-type="${hood.kind === "apartments" ? "דירה" : "בית פרטי"}" data-rooms="" data-deal="sale"></div><script type="module" src="/market.mjs?v=3"></script>`;
 const listingsBlock = ({title, deal = "", neighborhood = "", label}) => `<section aria-labelledby="area-listings-title">
       <h2 id="area-listings-title">${escaped(title)}</h2>
       <p id="area-status" class="section-caption" role="status">טוען נכסים…</p>

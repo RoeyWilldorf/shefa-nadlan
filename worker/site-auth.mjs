@@ -11,7 +11,8 @@
 //   * Login attempts and public inquiries are rate limited per IP.
 //   * If no R2 bucket is bound but a KV namespace "FILES" is, files are stored in KV.
 
-import {injectListings} from "./site-pages.mjs";
+import {injectListings,injectSold} from "./site-pages.mjs";
+import {remindLeads,weeklyReport,WEEKLY_CRON} from "./site-cron.mjs";
 import {robotsTxt,sitemapXml,aiCopy,aiCopyPath,notFoundPage,publicHtml,publicHeaders,writeCopy} from "./site-growth.mjs";
 import {notifyReady,sendEmail,leadEmail,notifyMatches} from "./site-notify.mjs";
 import {countView,statsReport} from "./site-stats.mjs";
@@ -344,7 +345,7 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
     } else if (type.startsWith("text/html")||type.includes("xml")) {
       // The pages were written for the old address; point canonical/OG links at this site.
       let text=publicHtml((await response.text()).replaceAll(LEGACY_ORIGIN,url.origin),path,env);
-      if (method==="GET"&&response.status===200&&!owner) text=await injectListings(text,()=>inner("/api/catalog"),url.origin);
+      if (method==="GET"&&response.status===200&&!owner) text=await injectSold(await injectListings(text,()=>inner("/api/catalog"),url.origin),()=>inner("/api/sold"));
       response=new Response(method==="HEAD"?null:text,response);
     }
     response=new Response(response.body,response);
@@ -358,5 +359,17 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
     publicHeaders(response,path,env);
     if (!owner&&response.status===200&&(response.headers.get("content-type")||"").startsWith("text/html")) later(countView(env,request,url));
     return response;
+  },
+  // Cron Triggers (wrangler.toml): hourly lead reminders, weekly report on Sunday morning.
+  async scheduled(event,env,ctx) {
+    if (!env.BUCKET&&env.FILES) env={...env,BUCKET:kvBucket(env.FILES)};
+    if (env.DB&&migrations.length) {
+      migrated??=migrate(env.DB,migrations).catch(error=>{migrated=null;throw error;});
+      await migrated;
+    }
+    const origin=env.SITE_ORIGIN||"https://shefa-nadlan.roivil13.workers.dev";
+    const loadCatalog=()=>worker.fetch(new Request(`${origin}/api/catalog`),env,ctx);
+    if (event.cron===WEEKLY_CRON) await weeklyReport(env,origin,loadCatalog,slugTowns);
+    else await remindLeads(env,origin);
   }};
 }
