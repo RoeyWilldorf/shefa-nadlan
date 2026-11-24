@@ -15,11 +15,12 @@
   <meta property="og:url" content="https://shefa-nadlan-gedera.roivil13.chatgpt.site/areas/bat-yam.html">
   <meta property="og:image" content="https://shefa-nadlan-gedera.roivil13.chatgpt.site/media/hero.webp">
   <link rel="icon" href="/media/shefa-round.webp" type="image/webp">
-  <link rel="stylesheet" href="/styles.css?v=20">
+  <link rel="stylesheet" href="/styles.css?v=21">
   <script type="module" src="/page.mjs?v=10"></script>
   <script type="module" src="/site-tools.mjs?v=3"></script>
-  <script type="module" src="/area.mjs?v=2"></script>
+  <script type="module" src="/area.mjs?v=3"></script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"דף הבית","item":"https://shefa-nadlan-gedera.roivil13.chatgpt.site/"},{"@type":"ListItem","position":2,"name":"נדל״ן בבת ים","item":"https://shefa-nadlan-gedera.roivil13.chatgpt.site/areas/bat-yam.html"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"איך מתחילים לחפש דירה בבת ים?","acceptedAnswer":{"@type":"Answer","text":"קבעו תקציב, מספר חדרים ומאפיינים שאי אפשר לוותר עליהם, ושלחו לנו את הפרטים. נחזור אליכם עם נכסים מתאימים בבת ים ובסביבה, ונעדכן כשיעלו נכסים חדשים."}},{"@type":"Question","name":"איך יודעים אם המחיר של נכס בבת ים הוגן?","acceptedAnswer":{"@type":"Answer","text":"השוו לעסקאות שנחתמו באזור בתקופה האחרונה, בשטח ובמאפיינים דומים. אפשר לבדוק עסקאות במאגר הרשמי של רשות המסים, ואנחנו נשמח לעזור לקרוא את הנתונים."}},{"@type":"Question","name":"רוצה למכור או להשכיר נכס בבת ים - מה הצעד הראשון?","acceptedAnswer":{"@type":"Answer","text":"בקשו הערכת שווי. נבחן את הנכס מול עסקאות דומות, נציע מחיר שיווק ונסביר איך נשווק אותו. השיחה הראשונה ללא התחייבות."}},{"@type":"Question","name":"איך עובדים דמי התיווך?","acceptedAnswer":{"@type":"Answer","text":"לפני שמתחילים, חותמים על הזמנת שירותי תיווך בכתב, שבה מופיעים דמי התיווך ותנאי ההתקשרות - כפי שנדרש בחוק המתווכים. כך הכול ברור מראש."}}]}</script>
 </head>
 <body data-site-tools="public">
   <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -78,8 +79,9 @@
     <section aria-labelledby="area-listings-title">
       <h2 id="area-listings-title">נכסים בבת ים</h2>
       <p id="area-status" class="section-caption" role="status">טוען נכסים…</p>
-      <div id="area-listings" class="cards" data-town="בת ים"></div>
+      <div id="area-listings" class="cards" data-town="בת ים"><!--SSR--></div>
     </section>
+    
     <section class="area-services" aria-labelledby="area-services-title">
       <h2 id="area-services-title">איך נוכל לעזור לכם בבת ים</h2>
       <div class="path-grid">
@@ -109,10 +111,10 @@
         </ul>
       </div>
       <nav class="footer-col" aria-labelledby="footer-properties"><h2 id="footer-properties">נכסים</h2>
-        <a href="/?deal=sale#listings">נכסים למכירה</a><a href="/?deal=rent#listings">נכסים להשכרה</a><a href="/#areas">חיפוש לפי אזור</a><a href="/areas/gedera.html">נכסים בגדרה</a>
+        <a href="/areas/gedera-for-sale.html">דירות למכירה בגדרה</a><a href="/areas/gedera-for-rent.html">דירות להשכרה בגדרה</a><a href="/areas/gedera.html#neighborhoods">שכונות בגדרה</a><a href="/#areas">חיפוש לפי אזור</a>
       </nav>
       <nav class="footer-col" aria-labelledby="footer-services"><h2 id="footer-services">שירותים ומידע</h2>
-        <a href="/valuation.html">הערכת שווי לנכס</a><a href="/mortgage.html">מחשבון משכנתא</a><a href="/#tools">מחשבוני מיסים ומסמכים</a><a href="/#guides">מדריכי קנייה, מכירה ושכירות</a>
+        <a href="/valuation.html">הערכת שווי לנכס</a><a href="/calculators/purchase-tax.html">מחשבון מס רכישה</a><a href="/calculators/capital-gains-tax.html">מחשבון מס שבח</a><a href="/mortgage.html">מחשבון משכנתא</a><a href="/#guides">מדריכי קנייה, מכירה ושכירות</a>
       </nav>
       <div class="footer-col footer-contact"><h2>צרו קשר</h2>
         <a href="tel:+972527504034">שרל <bdi>052-7504034</bdi></a><a href="tel:+972527504037">רועי <bdi>052-7504037</bdi></a>

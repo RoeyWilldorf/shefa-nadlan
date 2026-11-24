@@ -9,7 +9,7 @@ export const aiCopyPath=new RegExp(`^/api/office/properties/(${ID})/ai-copy$`,"i
 // Pages Google may index. The demo property pages (/properties/*.html) stay out on purpose:
 // they show sample prices, so they should not appear in search results as real offers.
 export function isIndexable(path) {
-  return path==="/"||path==="/index.html"||path==="/accessibility.html"||path==="/valuation.html"||path==="/about.html"||path==="/mortgage.html"||path==="/privacy.html"||/^\/(guides|areas)\/[\w-]+\.html$/.test(path)||listingPath.test(path);
+  return path==="/"||path==="/index.html"||path==="/accessibility.html"||path==="/valuation.html"||path==="/about.html"||path==="/mortgage.html"||path==="/privacy.html"||/^\/(guides|areas|calculators)\/[\w-]+\.html$/.test(path)||listingPath.test(path);
 }
 const isPrivate=path=>/^\/(office|login|logout|visit|api)(\/|$|\.)/.test(path)||path.startsWith("/office.");
 
@@ -30,7 +30,7 @@ Sitemap: ${url.origin}/sitemap.xml
 export async function sitemapXml(url,guides,loadCatalog) {
   const today=new Date().toISOString().slice(0,10);
   const entries=[{loc:"/",priority:"1.0",changefreq:"daily",lastmod:today},
-    ...guides.map(path=>({loc:path,priority:path.startsWith("/areas/")||path==="/valuation.html"?"0.8":"0.7",changefreq:path.startsWith("/areas/")?"weekly":"monthly"})),
+    ...guides.map(path=>({loc:path,priority:path.startsWith("/areas/")||path.startsWith("/calculators/")||path==="/valuation.html"?"0.8":"0.7",changefreq:path.startsWith("/areas/")?"daily":"monthly"})),
     {loc:"/accessibility.html",priority:"0.3",changefreq:"yearly"}];
   try {
     const response=await loadCatalog();

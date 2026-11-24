@@ -1,7 +1,7 @@
-const PURCHASE_START = "2025-01-16";
-const singleBrackets = [[1978745, 0], [2347040, 0.035], [6055070, 0.05], [20183565, 0.08], [Infinity, 0.10]];
-const additionalBrackets = [[6055070, 0.08], [Infinity, 0.10]];
-const purchaseRules = {
+export const PURCHASE_START = "2025-01-16";
+export const singleBrackets = [[1978745, 0], [2347040, 0.035], [6055070, 0.05], [20183565, 0.08], [Infinity, 0.10]];
+export const additionalBrackets = [[6055070, 0.08], [Infinity, 0.10]];
+export const purchaseRules = {
   single: {lastDate: "2028-01-15", brackets: singleBrackets},
   additional: {lastDate: "2026-12-31", brackets: additionalBrackets},
 };

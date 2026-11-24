@@ -1,5 +1,6 @@
 // Area pages: show the office's live properties and the sample properties for one town.
 import {properties, dealNames} from "./listings.mjs";
+import {listingFilter} from "./seo-areas.mjs";
 const showSamples=false;
 
 const box=document.querySelector("#area-listings");
@@ -26,7 +27,7 @@ async function render() {
     const response=await fetch("/api/catalog");
     if (response.ok) live=(await response.json()).properties??[];
   } catch {}
-  const list=[...live.filter(p=>p.town===town),...(showSamples?properties.filter(p=>p.town===town):[])];
+  const list=[...live.filter(listingFilter({town,deal:box.dataset.deal,neighborhood:box.dataset.neighborhood})),...(showSamples?properties.filter(p=>p.town===town):[])];
   const status=document.querySelector("#area-status");
   if (!list.length) {
     status.textContent=`כרגע אין נכסים מפורסמים ב${town}. השאירו פרטים ונעדכן אתכם כשיעלה נכס מתאים.`;
@@ -36,4 +37,4 @@ async function render() {
   status.textContent=list.length===1?"נכס אחד באזור":`${list.length} נכסים באזור`;
   box.innerHTML=list.map(card).join("");
 }
-if (box) render();
+if (box&&!box.dataset.ssr) render(); // pages served by the Worker already contain the listings

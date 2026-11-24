@@ -11,6 +11,7 @@
 //   * Login attempts and public inquiries are rate limited per IP.
 //   * If no R2 bucket is bound but a KV namespace "FILES" is, files are stored in KV.
 
+import {injectListings} from "./site-pages.mjs";
 import {robotsTxt,sitemapXml,aiCopy,aiCopyPath,notFoundPage,publicHtml,publicHeaders,writeCopy} from "./site-growth.mjs";
 import {notifyReady,sendEmail,leadEmail,notifyMatches} from "./site-notify.mjs";
 import {countView,statsReport} from "./site-stats.mjs";
@@ -342,7 +343,8 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
       response=new Response(method==="HEAD"?null:notFoundPage(),{status:404,headers:{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-store"}});
     } else if (type.startsWith("text/html")||type.includes("xml")) {
       // The pages were written for the old address; point canonical/OG links at this site.
-      const text=publicHtml((await response.text()).replaceAll(LEGACY_ORIGIN,url.origin),path,env);
+      let text=publicHtml((await response.text()).replaceAll(LEGACY_ORIGIN,url.origin),path,env);
+      if (method==="GET"&&response.status===200&&!owner) text=await injectListings(text,()=>inner("/api/catalog"),url.origin);
       response=new Response(method==="HEAD"?null:text,response);
     }
     response=new Response(response.body,response);

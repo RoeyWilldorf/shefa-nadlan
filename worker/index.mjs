@@ -1,3 +1,4 @@
+import {neighborhoodFor} from "../dist/seo-areas.mjs";
 import {propertyStates, leadStates, intents, channels, featureNames, idPattern, supportedTypes, marketingCopy} from "./model.mjs";
 import {makeVisits} from "./visits.mjs";
 import {brandMediaResponse} from "./brand-media.mjs";
@@ -522,7 +523,12 @@ async function listingPage(env,id,url,assets) {
           <h3><a href="${href}">${escaped(p.title)}</a></h3><p class="location">${icon("pin")}${escaped([p.town,p.neighborhood].filter(Boolean).join(" · "))}</p>
           ${facts.length?`<p class="card-facts">${facts.map(f=>`<span>${f}</span>`).join("")}</p>`:""}</div></article>`;}).join("")}</div>
       <p class="similar-more"><a class="button outline" href="/#listings">לכל הנכסים ${icon("left")}</a></p></section>`:"";
-  const detail=`<nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/">דף הבית</a><a href="/#listings">נכסים</a><span aria-current="page">${title}</span></nav>
+  const hood=neighborhoodFor(property);
+  const townSlug={"גדרה":"gedera"}[property.town];
+  const trail=[["דף הבית","/"],townSlug?[property.town,`/areas/${townSlug}.html`]:["נכסים","/#listings"],...(hood?[[hood.short||hood.name,`/areas/${hood.slug}.html`]]:[])];
+  const crumbsLd=JSON.stringify({"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:[...trail,[property.title,url.pathname]].map(([name,path],i)=>({"@type":"ListItem",position:i+1,name,item:`${url.origin}${path}`}))}).replace(/</g,"\\u003c");
+  const detail=`<nav class="breadcrumbs" aria-label="מיקום באתר">${trail.map(([name,path])=>`<a href="${path}">${escaped(name)}</a>`).join("")}<span aria-current="page">${title}</span></nav>
+    <script type="application/ld+json">${crumbsLd}</script>
     <article class="live-listing">
       <header class="listing-head">
         <div><p class="listing-tags"><span class="tag tag-${property.deal}">${dealWord}</span>${property.status==="negotiation"?'<span class="tag tag-hot">במשא ומתן</span>':""}</p>

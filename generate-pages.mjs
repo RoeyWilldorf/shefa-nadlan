@@ -1,6 +1,8 @@
 import {mkdir, readFile, writeFile} from "node:fs/promises";
 import {properties, dealNames, towns, townSlugs, showSamples} from "./dist/listings.mjs";
 import {propertyUrl} from "./dist/engagement.mjs";
+import {singleBrackets, additionalBrackets} from "./dist/tax.mjs";
+import {gederaNeighborhoods, inPlace} from "./dist/seo-areas.mjs";
 
 const root = new URL("./dist/", import.meta.url);
 const index = new URL("index.html", root);
@@ -33,7 +35,7 @@ function layout({path, title, description, contents, image, head = ""}) {
   <meta property="og:url" content="${url.href}">
   ${image ? `<meta property="og:image" content="${new URL(image, origin).href}">` : ""}
   <link rel="icon" href="/media/shefa-round.webp" type="image/webp">
-  <link rel="stylesheet" href="/styles.css?v=20">
+  <link rel="stylesheet" href="/styles.css?v=21">
   <script type="module" src="/page.mjs?v=10"></script>
   <script type="module" src="/site-tools.mjs?v=3"></script>
 ${head}</head>
@@ -172,7 +174,7 @@ function areaPage(town) {
     {"@type":"ListItem",position:1,name:"דף הבית",item:new URL("/", origin).href},
     {"@type":"ListItem",position:2,name:`נדל״ן ב${town}`,item:new URL(`/areas/${slug}.html`, origin).href}]};
   return layout({path: `/areas/${slug}.html`, title, description, image: "/media/hero.webp",
-    head: `  <script type="module" src="/area.mjs?v=2"></script>\n  <script type="application/ld+json">${JSON.stringify(crumbs)}</script>\n`,
+    head: `  <script type="module" src="/area.mjs?v=3"></script>\n  <script type="application/ld+json">${JSON.stringify(crumbs)}</script>\n${faqLd(areaFaq(town))}`,
     contents: `
   <nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/">דף הבית</a><span aria-hidden="true">/</span><a href="/#areas">אזורים</a><span aria-hidden="true">/</span><span aria-current="page">${escaped(town)}</span></nav>
   <article class="area-page">
@@ -185,8 +187,9 @@ function areaPage(town) {
     <section aria-labelledby="area-listings-title">
       <h2 id="area-listings-title">נכסים ב${escaped(town)}</h2>
       <p id="area-status" class="section-caption" role="status">טוען נכסים…</p>
-      <div id="area-listings" class="cards" data-town="${escaped(town)}"></div>
+      <div id="area-listings" class="cards" data-town="${escaped(town)}"><!--SSR--></div>
     </section>
+    ${town === "גדרה" ? `<nav class="related-links" id="neighborhoods" aria-label="חיפוש בגדרה"><h2>חיפוש לפי שכונה בגדרה</h2><div class="town-links"><a href="/areas/gedera-for-sale.html">כל הנכסים למכירה בגדרה</a><a href="/areas/gedera-for-rent.html">כל הנכסים להשכרה בגדרה</a>${gederaNeighborhoods.map(n => `<a href="/areas/${n.slug}.html">${escaped(n.name)}</a>`).join("")}</div></nav>` : ""}
     <section class="area-services" aria-labelledby="area-services-title">
       <h2 id="area-services-title">איך נוכל לעזור לכם ב${escaped(town)}</h2>
       <div class="path-grid">
@@ -339,7 +342,249 @@ const accessibilityPage = layout({
   </article>`,
 });
 
-await Promise.all(["properties/", "guides/", "areas/"].map(dir => mkdir(new URL(dir, root), {recursive: true})));
+
+// ---------- Shared SEO helpers ----------
+const ld = data => `  <script type="application/ld+json">${JSON.stringify(data).replace(/</g, "\\u003c")}</script>\n`;
+const crumbsLd = items => ld({"@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: items.map(([name, path], i) => ({"@type": "ListItem", position: i + 1, name, item: new URL(path, origin).href}))});
+const faqLd = items => ld({"@context": "https://schema.org", "@type": "FAQPage", mainEntity: items.map(([q, a]) => ({"@type": "Question", name: q, acceptedAnswer: {"@type": "Answer", text: a}}))});
+const crumbsNav = items => `<nav class="breadcrumbs" aria-label="מיקום באתר">${items.map(([name, path], i) => i === items.length - 1 ? `<span aria-current="page">${escaped(name)}</span>` : `<a href="${path}">${escaped(name)}</a><span aria-hidden="true">/</span>`).join("")}</nav>`;
+const faqHtml = (items, title = "שאלות נפוצות") => `<section class="reading-page area-faq" aria-labelledby="faq-title"><h2 id="faq-title">${title}</h2>
+      ${items.map(([q, a]) => `<details><summary>${escaped(q)}</summary><p>${escaped(a)}</p></details>`).join("\n      ")}</section>`;
+const shekel = value => `${number.format(value)} ₪`;
+const pct = rate => `${+(rate * 100).toFixed(1)}%`;
+function bracketRows(brackets) {
+  let lower = 0;
+  return brackets.map(([upper, rate]) => {
+    const row = `<tr><td>${upper === Infinity ? `מעל ${shekel(lower)}` : lower === 0 ? `עד ${shekel(upper)}` : `${shekel(lower + 1)} – ${shekel(upper)}`}</td><td>${pct(rate)}</td></tr>`;
+    lower = upper; return row;
+  }).join("");
+}
+const calcLinks = current => `<nav class="related-links" aria-label="מחשבונים נוספים"><h2>מחשבונים נוספים</h2><div class="town-links">${[
+  ["/calculators/purchase-tax.html", "מחשבון מס רכישה"], ["/calculators/capital-gains-tax.html", "מחשבון מס שבח"], ["/mortgage.html", "מחשבון משכנתא"],
+  ["/calculators/betterment-levy.html", "מחשבון היטל השבחה"], ["/calculators/rental-yield.html", "מחשבון תשואה משכירות"]].filter(([href]) => href !== current).map(([href, label]) => `<a href="${href}">${label}</a>`).join("")}</div></nav>`;
+
+// ---------- Calculator pages (/calculators/*.html) ----------
+const calculators = [
+  {
+    slug: "purchase-tax", kind: "purchase", name: "מחשבון מס רכישה",
+    title: "מחשבון מס רכישה 2026 - דירה יחידה ודירה נוספת",
+    description: "מחשבון מס רכישה מעודכן לשנת 2026: חישוב לפי מדרגות המס לדירה יחידה ולדירה נוספת, כולל פירוט לפי מדרגות וטבלת המדרגות העדכנית.",
+    lead: "הזינו את שווי הדירה, את סוג הרכישה ואת החלק שאתם רוכשים, וקבלו אומדן של מס הרכישה עם פירוט לפי מדרגות.",
+    body: `<section><h2>מה זה מס רכישה?</h2>
+      <p>מס רכישה הוא מס שמשלם מי שרוכש זכות במקרקעין, ובכלל זה דירת מגורים. גובה המס נקבע לפי שווי הדירה ולפי מעמד הרוכש: רוכש דירה יחידה נהנה ממדרגות מס מקלות, ובחלק התחתון של המחיר אינו משלם מס כלל. רוכש דירה נוספת משלם מס גבוה יותר כבר מהשקל הראשון.</p></section>
+    <section><h2>מדרגות מס רכישה לדירה יחידה</h2>
+      <p>המדרגות שלהלן חלות על עסקאות מ־16.1.2025 ועד 15.1.2028, וכך הן מחושבות במחשבון.</p>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">שווי הדירה</th><th scope="col">שיעור המס</th></tr></thead><tbody>${bracketRows(singleBrackets)}</tbody></table></div></section>
+    <section><h2>מדרגות מס רכישה לדירה נוספת</h2>
+      <p>לעסקאות מ־16.1.2025 ועד 31.12.2026.</p>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">שווי הדירה</th><th scope="col">שיעור המס</th></tr></thead><tbody>${bracketRows(additionalBrackets)}</tbody></table></div></section>
+    <section><h2>דוגמה לחישוב</h2>
+      <p>רוכש דירה יחידה שקונה דירה ב־2,500,000 ₪ לא ישלם מס על החלק הראשון (עד ${shekel(singleBrackets[0][0])}), ישלם 3.5% על החלק שבין המדרגה הראשונה ל־${shekel(singleBrackets[1][0])}, ו־5% על היתרה. המחשבון עושה את החישוב הזה עבורכם ומציג את הפירוט.</p></section>`,
+    faq: [
+      ["מי נחשב רוכש דירה יחידה?", "באופן כללי, תושב ישראל שהדירה הנרכשת תהיה דירת המגורים היחידה שלו. מי שמחזיק דירה אחרת ומתחייב למכור אותה בתוך פרק הזמן שקבוע בחוק (דירה חלופית) יכול גם הוא ליהנות מהמדרגות של דירה יחידה, בכפוף לתנאים. את הסיווג הסופי קובעת רשות המסים."],
+      ["האם המחשבון מחליף את חישוב רשות המסים?", "לא. המחשבון נותן אומדן לפי המדרגות הרגילות. לבדיקת זכאות להקלות, פטורים או מצבים מיוחדים (למשל עולים חדשים או נכי צה״ל), השתמשו בסימולטור של רשות המסים או היוועצו בעורך הדין המלווה את העסקה."],
+      ["מי מדווח ומשלם את מס הרכישה?", "בדרך כלל עורך הדין של הקונה מגיש את הדיווח לרשות המסים אחרי החתימה על החוזה, והקונה משלם את המס לפי השומה. כדאי לתכנן את התשלום כבר בשלב בניית התקציב לרכישה."],
+      ["האם מס רכישה נכלל במשכנתא?", "לא. הבנקים מממנים אחוז ממחיר הדירה, ואת מס הרכישה, שכר הטרחה ודמי התיווך יש לשלם מההון העצמי. לכן חשוב לחשב את המס מראש."],
+    ],
+  },
+  {
+    slug: "capital-gains-tax", kind: "gain", name: "מחשבון מס שבח",
+    title: "מחשבון מס שבח - אומדן מס על מכירת דירה",
+    description: "מחשבון מס שבח למכירת דירה: אומדן המס על השבח הריאלי בשיעור 25%, עם הסבר על פטורים, הוצאות מוכרות ומתי כדאי לפנות לייעוץ.",
+    lead: "הזינו את מחיר המכירה, את עלות הרכישה המתואמת ואת ההוצאות המוכרות, וקבלו אומדן ראשוני של מס השבח.",
+    body: `<section><h2>מה זה מס שבח?</h2>
+      <p>מס שבח הוא מס על הרווח (״השבח״) ממכירת זכות במקרקעין: ההפרש בין מחיר המכירה לבין מחיר הרכישה, אחרי הצמדה למדד ואחרי ניכוי הוצאות מוכרות. את המס משלם המוכר.</p></section>
+    <section><h2>איך מחושב האומדן במחשבון</h2>
+      <p>המחשבון מניח דירה שנרכשה מ־1.1.2014 ושכל השבח הריאלי חייב במס בשיעור 25%. הזינו עלות רכישה והוצאות אחרי הצמדה למדד, כדי שהאומדן יתקרב לחישוב האמיתי.</p>
+      <ul><li><strong>הוצאות מוכרות</strong> נפוצות: שכר טרחת עורך דין ודמי תיווך בקנייה ובמכירה, מס רכישה ששולם, ושיפורים שהשביחו את הדירה.</li>
+      <li><strong>דירה שנרכשה לפני 2014</strong> מחושבת בדרך כלל בשיטה ״ליניארית״, שבה חלק מהשבח עשוי להיות פטור. המחשבון אינו מחשב מצב זה.</li></ul></section>
+    <section><h2>פטור ממס שבח</h2>
+      <p>במכירת דירת מגורים מזכה קיימים פטורים, ובראשם פטור למוכר דירה יחידה, בכפוף לתנאים ולתקרת שווי שמתעדכנת מעת לעת. לפני מכירה כדאי לבדוק עם עורך דין או רואה חשבון אם הפטור חל עליכם, ואיך לתכנן את המכירה בצורה הנכונה.</p></section>`,
+    faq: [
+      ["מי משלם מס שבח, הקונה או המוכר?", "המוכר. הקונה משלם מס רכישה, והמוכר משלם מס שבח על הרווח מהמכירה, אם אינו זכאי לפטור."],
+      ["האם מוכר דירה יחידה פטור ממס שבח?", "במקרים רבים כן, בתנאים שקבועים בחוק ועד תקרת שווי מסוימת. התנאים כוללים בין השאר החזקה בדירה לתקופה מינימלית ואי־מכירת דירה אחרת בפטור בתקופה שקדמה למכירה. כדאי לבדוק את הזכאות מול איש מקצוע."],
+      ["אילו הוצאות אפשר לנכות?", "בין השאר: שכר טרחת עורך דין ודמי תיווך בקנייה ובמכירה, מס הרכישה ששולם, והוצאות השבחה כמו שיפוץ מהותי או תוספת בנייה. יש לשמור קבלות."],
+      ["מתי מדווחים על המכירה?", "בדרך כלל עורך הדין של המוכר מגיש את הדיווח לרשות המסים זמן קצר אחרי החתימה על החוזה. אפשר להיעזר בשירות השומה העצמית של רשות המסים."],
+    ],
+  },
+  {
+    slug: "betterment-levy", kind: "betterment", name: "מחשבון היטל השבחה",
+    title: "מחשבון היטל השבחה - אומדן לפי שווי לפני ואחרי",
+    description: "מחשבון היטל השבחה: אומדן ההיטל בשיעור 50% מעליית השווי בעקבות אישור תכנית, הקלה או שימוש חורג, לפי חלק הזכויות שלכם.",
+    lead: "הזינו את סכום ההשבחה או את שווי הנכס לפני השינוי התכנוני ואחריו, ואת חלק הזכויות שלכם, וקבלו אומדן של היטל ההשבחה.",
+    body: `<section><h2>מה זה היטל השבחה?</h2>
+      <p>היטל השבחה הוא תשלום לוועדה המקומית לתכנון ובנייה, כשערך המקרקעין עולה בעקבות אישור תכנית, מתן הקלה או התרת שימוש חורג. השיעור הרגיל הוא מחצית (50%) מסכום ההשבחה, כלומר מעליית השווי שנגרמה בגלל השינוי התכנוני.</p></section>
+    <section><h2>מתי משלמים?</h2>
+      <p>החיוב נוצר במועד אישור התכנית או ההקלה, אבל התשלום נדרש בדרך כלל במועד ״מימוש״: מכירת הנכס, קבלת היתר בנייה שמנצל את הזכויות, או התחלת השימוש החורג. לכן קונים ומוכרים של בתים ומגרשים צריכים לבדוק אם יש היטל פתוח לפני החתימה.</p></section>
+    <section><h2>איך לבדוק לפני עסקה</h2>
+      <ul><li>בקשו מהוועדה המקומית אישור על חובות היטל השבחה לנכס.</li>
+      <li>בדקו אילו תכניות אושרו על המגרש מאז הרכישה האחרונה.</li>
+      <li>במכירה, ודאו בחוזה מי נושא בהיטל, ובמקרה של מחלוקת על הסכום, היוועצו בשמאי מקרקעין.</li></ul></section>`,
+    faq: [
+      ["כמה היטל השבחה משלמים?", "השיעור הרגיל הוא 50% מסכום ההשבחה, כלומר מעליית השווי שנגרמה בגלל השינוי התכנוני. הסכום עצמו נקבע בשומה של הוועדה המקומית או של שמאי מכריע."],
+      ["האם יש פטורים מהיטל השבחה?", "כן. החוק קובע מצבים מסוימים שבהם ניתן פטור, למשל בתנאים מסוימים בהרחבת דירת מגורים. הפטורים תלויים בפרטי המקרה, ולכן כדאי לבדוק מול הוועדה המקומית או שמאי."],
+      ["מי משלם את ההיטל בעסקת מכר?", "לפי החוק, החבות היא של בעל הזכות במועד אישור התכנית, בדרך כלל המוכר. בפועל הצדדים יכולים להסכים אחרת בחוזה, ולכן חשוב לבדוק את הסעיף לפני החתימה."],
+    ],
+  },
+  {
+    slug: "rental-yield", kind: "yield", name: "מחשבון תשואה משכירות",
+    title: "מחשבון תשואה על דירה להשקעה - ברוטו, נטו ותזרים",
+    description: "מחשבון תשואה לדירה להשקעה: תשואה ברוטו, תשואה אחרי הוצאות ותזרים חודשי אחרי החזר משכנתא, לפי מחיר הנכס ושכר הדירה.",
+    lead: "הזינו את מחיר הנכס, שכר הדירה הצפוי, עלויות הרכישה וההוצאות, וראו את התשואה ואת התזרים החודשי.",
+    body: `<section><h2>איך מחשבים תשואה על דירה?</h2>
+      <ul><li><strong>תשואה ברוטו:</strong> שכר הדירה השנתי חלקי מחיר הנכס. זה המדד הנפוץ להשוואה מהירה בין נכסים.</li>
+      <li><strong>תשואה אחרי הוצאות:</strong> שכר הדירה השנתי פחות הוצאות שוטפות (תחזוקה, ביטוח, ועד בית ותקופות ללא שוכר), חלקי מחיר הנכס יחד עם עלויות הרכישה.</li>
+      <li><strong>תזרים חודשי:</strong> מה נשאר בכיס בכל חודש אחרי ההוצאות והחזר המשכנתא.</li></ul></section>
+    <section><h2>מה עוד חשוב לבדוק בנכס להשקעה</h2>
+      <ul><li>ביקוש לשכירות באזור: קרבה לתחבורה, לאזורי תעסוקה ולמוסדות חינוך.</li>
+      <li>מס רכישה על דירה נוספת, שמגדיל את עלות הרכישה (ראו <a class="inline-link" href="/calculators/purchase-tax.html">מחשבון מס רכישה</a>).</li>
+      <li>מיסוי הכנסות משכירות: למגורים קיימים כמה מסלולי מיסוי, ובהם פטור עד תקרה ומסלול של 10%. כדאי לבחור מסלול בעזרת רואה חשבון.</li></ul></section>`,
+    faq: [
+      ["מהי תשואה טובה לדירה להשקעה?", "אין מספר אחד נכון. התשואה תלויה באזור, בסוג הנכס ובפוטנציאל להשבחה. כדאי להשוות לתשואה החציונית באזור ולשקול גם את עליית הערך הצפויה."],
+      ["האם התשואה כוללת מס?", "לא. המחשבון מציג את החישוב לפני מס על הכנסות משכירות. מסלול המיסוי המתאים תלוי בגובה ההכנסה ובמצב האישי שלכם."],
+      ["איך שפע נדל״ן יכולה לעזור למשקיעים?", "אנחנו מאתרים נכסים להשקעה בגדרה ובשפלה, בודקים את רמת שכר הדירה באזור ועוזרים למצוא שוכרים ולנהל את ההשכרה."],
+    ],
+  },
+];
+
+function calculatorPage(calc) {
+  const path = `/calculators/${calc.slug}.html`;
+  const crumbs = [["דף הבית", "/"], ["מחשבונים", "/#tools"], [calc.name, path]];
+  return layout({path, title: calc.title, description: calc.description, image: "/media/hero.webp",
+    head: `  <script type="module" src="/calc-page.mjs?v=1"></script>\n${crumbsLd(crumbs)}${faqLd(calc.faq)}${ld({"@context": "https://schema.org", "@type": "WebApplication", name: calc.name, url: new URL(path, origin).href, applicationCategory: "FinanceApplication", operatingSystem: "Any", inLanguage: "he", offers: {"@type": "Offer", price: 0, priceCurrency: "ILS"}, provider: {"@type": "RealEstateAgent", name: "שפע נדל״ן", url: origin}})}`,
+    contents: `
+  ${crumbsNav(crumbs)}
+  <article class="calc-page">
+    <header class="calc-page-head"><h1>${escaped(calc.title)}</h1><p class="reading-lead">${escaped(calc.lead)}</p></header>
+    <div class="calc-layout">
+      <div id="calc-root" class="content-card calc-root" data-kind="${calc.kind}" aria-busy="true"><noscript>כדי להשתמש במחשבון יש להפעיל JavaScript.</noscript></div>
+      <aside class="calc-aside content-card"><h2>צריכים עזרה בעסקה?</h2><p>אנחנו מלווים קונים ומוכרים בגדרה ובשפלה, מהחיפוש ועד החתימה.</p>
+        <button class="button primary" type="button" data-contact="${calc.kind === "gain" || calc.kind === "betterment" ? "sell" : calc.kind === "yield" ? "invest" : "buy"}">דברו איתנו</button>
+        <a class="button outline" href="/#listings">לנכסים שלנו</a></aside>
+    </div>
+    <div class="reading-page calc-content">
+      ${calc.body}
+      <p class="detail-note">המחשבון נותן אומדן כללי בלבד ואינו מהווה ייעוץ מס או ייעוץ משפטי. לפני עסקה היוועצו בעורך דין, ברואה חשבון או בשמאי מקרקעין.</p>
+    </div>
+    ${faqHtml(calc.faq)}
+    ${calcLinks(path)}
+  </article>`});
+}
+
+
+// ---------- Gedera landing pages: sale / rent / neighborhoods ----------
+const hoodLinks = current => `<nav class="related-links" aria-label="שכונות בגדרה"><h2>שכונות בגדרה</h2><div class="town-links">${gederaNeighborhoods.filter(n => n.slug !== current).map(n => `<a href="/areas/${n.slug}.html">${escaped(n.name)}</a>`).join("")}</div></nav>`;
+const marketBox = (type, deal) => `<div id="market-box" data-town="גדרה" data-neighborhood="" data-type="${type}" data-rooms="" data-deal="${deal}"></div><script type="module" src="/market.mjs?v=2"></script>`;
+const hoodMarketBox = hood => `<div id="market-box" data-town="גדרה" data-neighborhood="${escaped(hood.aliases[0])}" data-type="${hood.kind === "apartments" ? "דירה" : "בית פרטי"}" data-rooms="" data-deal="sale"></div><script type="module" src="/market.mjs?v=2"></script>`;
+const listingsBlock = ({title, deal = "", neighborhood = "", label}) => `<section aria-labelledby="area-listings-title">
+      <h2 id="area-listings-title">${escaped(title)}</h2>
+      <p id="area-status" class="section-caption" role="status">טוען נכסים…</p>
+      <div id="area-listings" class="cards" data-town="גדרה" data-deal="${deal}" data-neighborhood="${neighborhood}" data-label="${escaped(label)}"><!--SSR--></div>
+    </section>`;
+
+const dealPages = [
+  {
+    slug: "gedera-for-sale", deal: "sale", h1: "דירות ובתים למכירה בגדרה",
+    title: "דירות למכירה בגדרה - דירות, בתים ומגרשים", description: "דירות, בתים פרטיים, דו־משפחתיים ומגרשים למכירה בגדרה, מעודכן מהמשרד של שפע נדל״ן בעיר. מחירי עסקאות באזור, שכונות וליווי אישי עד החתימה.",
+    lead: "כל הנכסים שאנחנו משווקים למכירה בגדרה, מעודכנים ישירות מהמשרד שלנו בעיר: דירות בבניינים חדשים, בתים פרטיים ודו־משפחתיים, ומגרשים לבנייה.",
+    body: `<section><h2>קנייה בגדרה: מה כדאי לדעת</h2>
+      <p>גדרה נמצאת בשפלה, בין רחובות לאשדוד, ומושכת משפחות וזוגות צעירים שמחפשים מחיר נגיש יותר מערי המרכז לצד גישה נוחה לכבישים הראשיים. בעיר משתלבות שכונות חדשות עם בנייני מגורים, שכונות של בתים צמודי קרקע ואזורים ותיקים סביב המושבה ההיסטורית.</p>
+      <ol class="steps-list"><li><strong>הגדירו תקציב מלא:</strong> מחיר הדירה, מס רכישה, עורך דין, תיווך ושיפוצים. <a class="inline-link" href="/calculators/purchase-tax.html">חשבו את מס הרכישה</a> ואת <a class="inline-link" href="/mortgage.html">ההחזר החודשי</a>.</li>
+      <li><strong>בחרו שכונה:</strong> דירה בבניין חדש או בית עם חצר? כל שכונה בגדרה מתאימה לסגנון חיים אחר.</li>
+      <li><strong>השוו למחירי עסקאות:</strong> לפני הצעת מחיר, בדקו עסקאות שנחתמו באזור. אנחנו עוזרים לקרוא את הנתונים.</li>
+      <li><strong>בדקו את הנכס לעומק:</strong> רישום בטאבו, היתרי בנייה, חובות היטל השבחה ומצב הבניין.</li></ol></section>`,
+    faq: [
+      ["כמה עולה דירה בגדרה?", "המחיר תלוי בשכונה, בגודל ובסוג הנכס. דירות 4–5 חדרים בבניינים חדשים נמכרות במחירים שונים מבתים צמודי קרקע. בעמוד הזה מוצגים מחירי עסקאות עדכניים מנתוני המדינה, ובכל נכס מופיע המחיר המבוקש."],
+      ["אילו שכונות יש בגדרה?", "בין השכונות: גדרה מזרח (גולדה) עם בנייה חדשה, אמירי גן ועמק הנשר עם בתים דו־משפחתיים, המושבה הגרמנית וגדרה הצעירה עם בתים פרטיים ומגרשים, והמושבה - הלב ההיסטורי של העיר."],
+      ["למה לקנות דרך משרד תיווך מקומי?", "משרד מקומי מכיר את השכונות, את המחירים בפועל ואת הנכסים שעוד לא פורסמו. אנחנו מלווים את הקנייה מהסיור הראשון ועד החתימה, ופועלים לפי חוק המתווכים עם הזמנת שירותי תיווך בכתב."],
+      ["אפשר לקבל עדכון כשעולה נכס חדש?", "כן. השאירו פרטים עם מה שאתם מחפשים, ונעדכן אתכם ראשונים כשעולה נכס מתאים - לפעמים עוד לפני שהוא מתפרסם."],
+    ],
+  },
+  {
+    slug: "gedera-for-rent", deal: "rent", h1: "דירות ובתים להשכרה בגדרה",
+    title: "דירות להשכרה בגדרה - דירות ובתים לשכירות", description: "דירות ובתים להשכרה בגדרה, מעודכן מהמשרד של שפע נדל״ן בעיר. בתים דו־משפחתיים, דירות ובתים פרטיים לשכירות ארוכת טווח.",
+    lead: "נכסים להשכרה בגדרה, מעודכנים ישירות מהמשרד שלנו בעיר. ספרו לנו מה אתם מחפשים, ונעדכן אתכם כשנכס מתאים מתפנה.",
+    body: `<section><h2>שכירות בגדרה: מה כדאי לבדוק</h2>
+      <ul><li><strong>מועד כניסה ותקופת השכירות:</strong> בררו מראש אם אפשר לחתום לתקופה ארוכה ואם יש אופציה להארכה.</li>
+      <li><strong>בטחונות:</strong> בדקו אילו ערבויות נדרשות (ערבים, ערבות בנקאית או צ׳קים) ומתי הן מוחזרות.</li>
+      <li><strong>מצב הנכס:</strong> תעדו בתמונות את מצב הדירה לפני הכניסה, ובקשו לתקן ליקויים לפני החתימה.</li>
+      <li><strong>הוצאות נוספות:</strong> ארנונה, ועד בית, מים, חשמל וגז - כדאי לדעת את הסכומים מראש.</li></ul></section>
+    <section><h2>יש לכם נכס להשכרה בגדרה?</h2><p>אנחנו עוזרים לקבוע את שכר הדירה לפי השוק, לשווק את הנכס ולמצוא שוכרים מתאימים. <a class="inline-link" href="/valuation.html?town=%D7%92%D7%93%D7%A8%D7%94">השאירו פרטים</a> ונחזור אליכם.</p></section>`,
+    faq: [
+      ["כמה עולה לשכור דירה בגדרה?", "שכר הדירה תלוי בגודל, בשכונה ובסוג הנכס. בעמוד מוצג שכר הדירה החציוני בגדרה לפי נתוני המדינה, ולכל נכס מופיע המחיר המבוקש."],
+      ["אילו נכסים להשכרה יש בגדרה?", "בעיר מוצעים להשכרה דירות בבניינים, וגם בתים דו־משפחתיים ובתים פרטיים בשכונות כמו אמירי גן ועמק הנשר."],
+      ["איך מקבלים עדכון על דירה להשכרה?", "השאירו פרטים עם התקציב, מספר החדרים ומועד הכניסה, ונעדכן אתכם כשמתפנה נכס מתאים."],
+    ],
+  },
+];
+
+function dealPage(page) {
+  const path = `/areas/${page.slug}.html`;
+  const crumbs = [["דף הבית", "/"], ["גדרה", "/areas/gedera.html"], [page.h1, path]];
+  const other = page.deal === "sale" ? ["/areas/gedera-for-rent.html", "נכסים להשכרה בגדרה"] : ["/areas/gedera-for-sale.html", "נכסים למכירה בגדרה"];
+  return layout({path, title: page.title, description: page.description, image: "/media/hero.webp",
+    head: `  <script type="module" src="/area.mjs?v=3"></script>\n${crumbsLd(crumbs)}${faqLd(page.faq)}`,
+    contents: `
+  ${crumbsNav(crumbs)}
+  <article class="area-page">
+    <h1>${escaped(page.h1)}</h1>
+    <p class="reading-lead">${escaped(page.lead)}</p>
+    <div class="action-row">
+      <button class="button primary" type="button" data-contact="alert" data-prefill-town="גדרה">עדכנו אותי על נכס חדש</button>
+      <a class="button outline" href="${other[0]}">${other[1]}</a>
+    </div>
+    ${listingsBlock({title: page.deal === "sale" ? "נכסים למכירה בגדרה" : "נכסים להשכרה בגדרה", deal: page.deal, label: "גדרה"})}
+    ${marketBox("דירה", page.deal)}
+    <div class="reading-page">${page.body}</div>
+    ${hoodLinks("")}
+    ${faqHtml(page.faq)}
+  </article>`});
+}
+
+const houseChecks = `<ul><li><strong>שטח בנוי מול שטח מגרש:</strong> בקשו את שני הנתונים, ובדקו מה מופיע בהיתר הבנייה ובחשבון הארנונה.</li>
+      <li><strong>היתרים ותוספות:</strong> ודאו שכל התוספות (חדרים, מרתף, פרגולות) בנויות בהיתר.</li>
+      <li><strong>בית דו־משפחתי:</strong> בררו איך המגרש מחולק בין שני הבתים והאם יש הסכם שיתוף רשום.</li>
+      <li><strong>זכויות בנייה ויתרות:</strong> אם יש זכויות שלא נוצלו, הן עשויות להוסיף לערך הנכס. בדקו גם חובות היטל השבחה (<a class="inline-link" href="/calculators/betterment-levy.html">מחשבון היטל השבחה</a>).</li></ul>`;
+const apartmentChecks = `<ul><li><strong>רישום הדירה:</strong> בדקו נסח טאבו או אישור זכויות, ובבניין חדש - את רישום הבית המשותף.</li>
+      <li><strong>חניה ומחסן:</strong> ודאו שהם צמודים לדירה ברישום ולא רק בפועל.</li>
+      <li><strong>ממ״ד, מעלית ומרפסת שמש:</strong> מאפיינים שמשפיעים מאוד על המחיר ועל הביקוש בעת מכירה עתידית.</li>
+      <li><strong>ועד בית ותחזוקה:</strong> בררו את גובה דמי ועד הבית ואם מתוכננות עבודות בבניין.</li></ul>`;
+
+function neighborhoodPage(hood) {
+  const path = `/areas/${hood.slug}.html`;
+  const label = hood.page || hood.name;
+  const crumbs = [["דף הבית", "/"], ["גדרה", "/areas/gedera.html"], [label, path]];
+  const title = `נדל״ן ${inPlace(hood.name)}, גדרה - ${hood.focus} למכירה ולהשכרה`;
+  const description = `${hood.focus} ${inPlace(hood.name)} בגדרה: נכסים למכירה ולהשכרה, מחירי עסקאות מנתוני המדינה, ומה חשוב לבדוק לפני קנייה. שפע נדל״ן - המשרד המקומי בגדרה.`;
+  const faq = [
+    [`כמה עולה נכס ${inPlace(hood.name)}?`, `המחיר תלוי בסוג הנכס, בגודל ובמצב. בעמוד מוצגים מחירי עסקאות עדכניים מנתוני המדינה לגדרה ולשכונה (כשיש מספיק עסקאות), ולכל נכס מופיע המחיר המבוקש. להערכה מדויקת לנכס מסוים, פנו אלינו.`],
+    [`איזה סוג נכסים יש ${inPlace(hood.name)}?`, `${inPlace(hood.name)} משווקים בעיקר ${hood.focus}. הרשימה בעמוד מתעדכנת אוטומטית לפי הנכסים שאנחנו משווקים כרגע.`],
+    [`יש לי נכס ${inPlace(hood.name)}. כמה הוא שווה?`, `השאירו פרטים לבקשת הערכת שווי. נשווה את הנכס לעסקאות דומות בשכונה ובגדרה, ונציע מחיר שיווק ותוכנית שיווק - בלי התחייבות.`],
+  ];
+  return layout({path, title, description, image: "/media/hero.webp",
+    head: `  <script type="module" src="/area.mjs?v=3"></script>\n${crumbsLd(crumbs)}${faqLd(faq)}`,
+    contents: `
+  ${crumbsNav(crumbs)}
+  <article class="area-page">
+    <h1>נדל״ן ${escaped(inPlace(hood.name))}, גדרה</h1>
+    <p class="reading-lead">${escaped(hood.intro)}</p>
+    <div class="action-row">
+      <button class="button primary" type="button" data-contact="alert" data-prefill-town="גדרה">עדכנו אותי על נכס ${escaped(inPlace(hood.short || hood.name))}</button>
+      <a class="button outline" href="/valuation.html?town=%D7%92%D7%93%D7%A8%D7%94">כמה שווה הנכס שלי?</a>
+    </div>
+    ${listingsBlock({title: `נכסים ${inPlace(hood.short || hood.name)}`, neighborhood: hood.slug, label: hood.name})}
+    ${hoodMarketBox(hood)}
+    <div class="reading-page">
+      <section><h2>מה חשוב לבדוק כשקונים ${escaped(inPlace(hood.short || hood.name))}</h2>${hood.kind === "apartments" ? apartmentChecks : houseChecks}</section>
+      <section><h2>מוכרים או משכירים נכס ${escaped(inPlace(hood.short || hood.name))}?</h2><p>אנחנו משווקים נכסים בשכונה ומכירים את הקונים והשוכרים שמחפשים בה. נכין לכם הערכת שווי מול עסקאות דומות, צילום מקצועי ושיווק ממוקד באתר, ביד 2 וברשתות החברתיות.</p>
+        <p><a class="inline-link" href="/areas/gedera-for-sale.html">לכל הנכסים למכירה בגדרה</a> · <a class="inline-link" href="/areas/gedera-for-rent.html">לנכסים להשכרה בגדרה</a></p></section>
+    </div>
+    ${faqHtml(faq)}
+    ${hoodLinks(hood.slug)}
+  </article>`});
+}
+
+await Promise.all(["properties/", "guides/", "areas/", "calculators/"].map(dir => mkdir(new URL(dir, root), {recursive: true})));
 for (const property of properties) await writeFile(new URL(propertyUrl(property.id).slice(1), root), propertyPage(property));
 for (const guide of guides) await writeFile(new URL(`guides/${guide.slug}.html`, root), guidePage(guide));
 await writeFile(new URL("accessibility.html", root), accessibilityPage);
@@ -347,6 +592,9 @@ for (const town of towns) await writeFile(new URL(`areas/${townSlugs[town]}.html
 await writeFile(new URL("valuation.html", root), valuationPage);
 await writeFile(new URL("about.html", root), aboutPage);
 await writeFile(new URL("mortgage.html", root), mortgagePage);
+for (const page of dealPages) await writeFile(new URL(`areas/${page.slug}.html`, root), dealPage(page));
+for (const hood of gederaNeighborhoods) await writeFile(new URL(`areas/${hood.slug}.html`, root), neighborhoodPage(hood));
+for (const calc of calculators) await writeFile(new URL(`calculators/${calc.slug}.html`, root), calculatorPage(calc));
 await writeFile(new URL("privacy.html", root), privacyPage);
 
 const listingLinks = (showSamples ? properties : []).map(property => `<article class="card static-listing"><h3><a href="${propertyUrl(property.id)}">${escaped(property.title)}</a></h3><p>${escaped(property.town)} · ${dealNames[property.deal]} · נכס לדוגמה</p></article>`).join("\n          ");

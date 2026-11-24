@@ -779,3 +779,30 @@ html.display-motion,html.display-motion *,html.display-motion *::before,html.dis
 .footer-col a,.menu-contact a{gap:6px}
 .agent-strip small{display:block;line-height:1.5}
 .agent-strip small .icon{display:inline-block;vertical-align:-2px;margin-inline-end:3px}
+
+/* ===== SEO landing pages: calculators, deal and neighborhood pages ===== */
+.calc-page-head{max-width:760px;margin-bottom:18px}
+.calc-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start;margin-bottom:28px}
+.calc-root{padding:22px;min-height:320px}
+.calc-root .dialog-content{padding:0;max-width:none;box-shadow:none;border:0;background:none}
+.calc-root .dialog-copy{margin-top:0}
+.calc-root .calc-result{margin-top:16px}
+.calc-aside{position:sticky;top:88px;display:grid;gap:10px;padding:20px}
+.calc-aside h2{margin:0;font-size:1.1rem}
+.calc-aside p{margin:0;color:var(--muted);font-size:.92rem}
+.calc-content section{margin-bottom:22px}
+.table-wrap{overflow-x:auto;margin:12px 0}
+.data-table{width:100%;max-width:560px;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:.95rem}
+.data-table th,.data-table td{padding:10px 14px;text-align:start;border-bottom:1px solid var(--line)}
+.data-table th{background:var(--pale);font-weight:700}
+.data-table tr:last-child td{border-bottom:0}
+.data-table td:last-child{font-weight:700;white-space:nowrap}
+.related-links{margin:30px 0 10px}
+.related-links h2{font-size:1.15rem;margin:0 0 10px}
+.steps-list{padding-inline-start:20px;display:grid;gap:8px}
+.area-page #market-box:empty{display:none}
+.area-page .market{margin-top:24px;border-top:0}
+.hood-links{margin-top:18px}
+.hood-links h3{font-size:1rem;margin:0 0 8px}
+@media(max-width:900px){.calc-layout{grid-template-columns:minmax(0,1fr)}.calc-aside{position:static}}
+@media(max-width:520px){.calc-root{padding:16px}}
