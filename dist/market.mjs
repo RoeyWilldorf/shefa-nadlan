@@ -92,7 +92,7 @@ export function marketSection(m) {
   if (m.hood) tiles.push([`${verb} · ${esc(m.neighborhood)}`,money(m.hood.price),`${m.label} · ${m.hood.when}`]);
   if (m.city) tiles.push([`${verb} · ${esc(m.town)}`,money(m.city.price),`${m.label} · ${m.city.when}`]);
   const country=(m.city||m.hood).country;
-  if (country) tiles.push(["ממוצע ארצי",money(country),`${m.label} · ${(m.city||m.hood).when}`]);
+  if (country) tiles.push(["חציון ארצי",money(country),`${m.label} · ${(m.city||m.hood).when}`]);
   if (!m.rent&&m.change!=null) tiles.push(["שינוי בשנה האחרונה",`<span dir="ltr">${m.change>0?"+":""}${m.change.toFixed(1)}%</span>`,m.change<0?"ירידת מחירים ב"+esc(m.town):"עליית מחירים ב"+esc(m.town)]);
   else if (m.rent&&m.yield) tiles.push(["תשואת שכירות שנתית",`${m.yield}%`,`חציון ב${esc(m.town)}`]);
   return `<section class="listing-section market" aria-labelledby="market-title">

@@ -536,7 +536,7 @@ async function listingPage(env,id,url,assets) {
           <section class="listing-section" aria-labelledby="about-title"><h2 id="about-title">על הנכס</h2>
             <p class="listing-description">${escaped(property.description)}</p></section>
           ${amenities}
-          ${property.type==="מגרש"?"":`<div id="market-box" data-town="${escaped(property.town)}" data-neighborhood="${escaped(property.neighborhood||"")}" data-type="${escaped(property.type)}" data-rooms="${property.rooms||""}" data-deal="${property.deal}"></div><script type="module" src="/market.mjs?v=1"></script>`}
+          ${property.type==="מגרש"?"":`<div id="market-box" data-town="${escaped(property.town)}" data-neighborhood="${escaped(property.neighborhood||"")}" data-type="${escaped(property.type)}" data-rooms="${property.rooms||""}" data-deal="${property.deal}"></div><script type="module" src="/market.mjs?v=2"></script>`}
           ${comparablesHtml}
         </div>
         <aside class="listing-aside" aria-label="מחיר ויצירת קשר">
