@@ -131,9 +131,9 @@ const advanced = document.querySelector("#advanced-filters");
 function buildTownChips() {
   const counts = new Map();
   for (const property of properties) counts.set(property.town, (counts.get(property.town) || 0) + 1);
-  const top = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const top = [...counts].filter(([, n]) => n > 1).sort((a, b) => b[1] - a[1]).slice(0, 5);
   townChips.innerHTML = top.map(([town, n]) => `<button type="button" class="chip" data-chip="town" data-value="${safe(town)}">${safe(town)} <small>${n}</small></button>`).join("");
-  townChips.hidden = top.length < 2;
+  townChips.hidden = !top.length;
 }
 function syncChips(filters) {
   for (const chip of filtersForm.querySelectorAll("[data-chip]")) chip.setAttribute("aria-pressed", String(filters[chip.dataset.chip] === chip.dataset.value));
