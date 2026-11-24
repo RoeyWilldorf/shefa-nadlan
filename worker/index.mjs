@@ -1,3 +1,4 @@
+import {areaMarket,marketSection} from "./site-market.mjs";
 import {propertyStates, leadStates, intents, channels, featureNames, idPattern, supportedTypes, marketingCopy} from "./model.mjs";
 import {makeVisits} from "./visits.mjs";
 import {brandMediaResponse} from "./brand-media.mjs";
@@ -471,11 +472,12 @@ async function listingPage(env,id,url,assets) {
   const row=await first(env.DB,`${catalogSql} AND p.id=?`,id);
   if (!row) return new Response("הנכס אינו זמין.",{status:404,headers:{...privateHeaders,"Content-Type":"text/plain; charset=utf-8"}});
   const property=publicProperty(row);
-  const [photoIds,comparables,similarRows]=await Promise.all([
+  const [photoIds,comparables,similarRows,market]=await Promise.all([
     rows(env.DB,"SELECT id,label FROM office_media WHERE property_id=? AND public_photo=1 ORDER BY created_at,id LIMIT 24",id),
     rows(env.DB,`SELECT deal_date,price,area,rooms,area_label,source_url,source_ref,verified_at FROM office_comparables
       WHERE property_id=? AND deal=? AND archived_at IS NULL AND ${comparisonWindow} ORDER BY deal_date DESC LIMIT 30`,id,property.deal,...comparisonDates()),
     rows(env.DB,`${catalogSql} AND p.id<>? ORDER BY (p.deal=?) DESC,(p.town=?) DESC,abs(p.price-?) LIMIT 3`,id,property.deal,property.town,property.price),
+    areaMarket(env,property),
   ]);
   const icon=name=>`<svg class="icon" aria-hidden="true"><use href="#${name}"/></svg>`;
   const nis=value=>`${currency.format(value)} ₪`;
@@ -536,6 +538,7 @@ async function listingPage(env,id,url,assets) {
           <section class="listing-section" aria-labelledby="about-title"><h2 id="about-title">על הנכס</h2>
             <p class="listing-description">${escaped(property.description)}</p></section>
           ${amenities}
+          ${marketSection(market)}
           ${comparablesHtml}
         </div>
         <aside class="listing-aside" aria-label="מחיר ויצירת קשר">

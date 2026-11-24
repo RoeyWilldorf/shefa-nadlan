@@ -9,7 +9,7 @@
     "dev": "node scripts/preview.mjs",
     "start": "node scripts/serve-render.mjs",
     "build": "node scripts/build.mjs",
-    "test": "node --test scripts/office.test.mjs scripts/site-auth.test.mjs",
+    "test": "node --test scripts/office.test.mjs scripts/site-auth.test.mjs scripts/market.test.mjs",
     "deploy": "wrangler deploy",
     "dev:cloudflare": "wrangler dev"
   },
