@@ -2,15 +2,15 @@
 // Uses the site's public open-data files (data.nadlan.gov.il), which it refreshes itself every quarter:
 // median deal price per number of rooms for the town and the neighborhood, the yearly change,
 // and the national median. Responses are cached at the edge for 12 hours; on any failure the
-// property page simply shows no box.
+// property page simply shows no box. Runs in the visitor's browser: the data server refuses
+// requests from hosting servers outside Israel but allows any web page (CORS *).
 const DATA="https://data.nadlan.gov.il/api";
 const SITE="https://www.nadlan.gov.il/";
 
-export let lastMarketError="";
 const clean=value=>String(value||"").replace(/\(.*?\)/g," ").replace(/[^א-ת]/g,"");
 
 async function get(path) {
-  const response=await fetch(`${DATA}/${path}`,{cf:{cacheTtl:43200,cacheEverything:true},signal:AbortSignal.timeout(3000)});
+  const response=await fetch(`${DATA}/${path}`,{signal:AbortSignal.timeout(8000)});
   if (!response.ok) throw Error(`nadlan ${response.status} ${path}`);
   return response.json();
 }
@@ -64,19 +64,18 @@ export function summarize(town,neighborhood,property) {
   };
 }
 
-export async function areaMarket(env,property) {
+export async function areaMarket(property) {
   if (!property?.town||property.type==="מגרש") return null;
   try {
     const kind=property.deal==="rent"?"rent":"buy";
     const id=findTown(await get("index/setl_types.json"),property.town);
-    if (!id) {lastMarketError=`town not found: ${property.town}`;return null;}
+    if (!id) return null;
     const town=await get(`pages/settlement/${kind}/${id}.json`);
     const match=findNeighborhood(town.otherNeighborhoods,property.neighborhood);
     const neighborhood=match?await get(`pages/neighborhood/${kind}/${match.id}.json`).catch(()=>null):null;
     return summarize(town,neighborhood,property);
   } catch (error) {
-    lastMarketError=String(error?.message||error).slice(0,120);
-    console.warn("market_data_unavailable",lastMarketError);
+    console.warn("market_data_unavailable",error?.message);
     return null;
   }
 }
@@ -86,7 +85,7 @@ const short=value=>value>=1e6?`${(value/1e6).toFixed(2).replace(/\.?0+$/,"")} מ
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 export function marketSection(m) {
-  if (!m) return lastMarketError?`<!-- market: ${esc(lastMarketError).replace(/--/g,"")} -->`:"";
+  if (!m) return "";
   const money=m.rent?v=>`${nis(v)} לחודש`:short;
   const verb=m.rent?"שכר דירה חציוני":"מחיר חציוני בעסקאות";
   const tiles=[];
@@ -103,4 +102,13 @@ export function marketSection(m) {
     <p class="market-foot"><a class="button outline" href="${esc(m.link)}" target="_blank" rel="noopener">לכל העסקאות באזור באתר הממשלתי</a>
     <small>חציון לפי עסקאות מדווחות; מחיר נכס בודד תלוי בגודל, קומה, מצב ומיקום. ייתכנו אי דיוקים במקור.</small></p>
   </section>`;
+}
+
+// Property page: <div id="market-box" data-town data-neighborhood data-type data-rooms data-deal>
+if (typeof document!=="undefined") {
+  const box=document.getElementById("market-box");
+  if (box) areaMarket({...box.dataset}).then(m=>{
+    const html=marketSection(m);
+    if (html) box.outerHTML=html;
+  });
 }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {findTown,findNeighborhood,summarize,marketSection} from "../worker/site-market.mjs";
+import {findTown,findNeighborhood,summarize,marketSection} from "../dist/market.mjs";
 
 const index={"2550":{SETL_NAME:"גדרה"},"5000":{SETL_NAME:"תל אביב -יפו"},"6200":{SETL_NAME:"בת ים"}};
 const g=(key,price,year=2026,month=3)=>({[key]:price,countryPrice:2920600,year,month});
