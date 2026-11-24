@@ -6,11 +6,12 @@
 const DATA="https://data.nadlan.gov.il/api";
 const SITE="https://www.nadlan.gov.il/";
 
+export let lastMarketError="";
 const clean=value=>String(value||"").replace(/\(.*?\)/g," ").replace(/[^א-ת]/g,"");
 
 async function get(path) {
   const response=await fetch(`${DATA}/${path}`,{cf:{cacheTtl:43200,cacheEverything:true},signal:AbortSignal.timeout(3000)});
-  if (!response.ok) throw Error(`nadlan ${response.status}`);
+  if (!response.ok) throw Error(`nadlan ${response.status} ${path}`);
   return response.json();
 }
 
@@ -68,13 +69,14 @@ export async function areaMarket(env,property) {
   try {
     const kind=property.deal==="rent"?"rent":"buy";
     const id=findTown(await get("index/setl_types.json"),property.town);
-    if (!id) return null;
+    if (!id) {lastMarketError=`town not found: ${property.town}`;return null;}
     const town=await get(`pages/settlement/${kind}/${id}.json`);
     const match=findNeighborhood(town.otherNeighborhoods,property.neighborhood);
     const neighborhood=match?await get(`pages/neighborhood/${kind}/${match.id}.json`).catch(()=>null):null;
     return summarize(town,neighborhood,property);
   } catch (error) {
-    console.warn("market_data_unavailable",error?.message);
+    lastMarketError=String(error?.message||error).slice(0,120);
+    console.warn("market_data_unavailable",lastMarketError);
     return null;
   }
 }
@@ -84,7 +86,7 @@ const short=value=>value>=1e6?`${(value/1e6).toFixed(2).replace(/\.?0+$/,"")} מ
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 export function marketSection(m) {
-  if (!m) return "";
+  if (!m) return lastMarketError?`<!-- market: ${esc(lastMarketError).replace(/--/g,"")} -->`:"";
   const money=m.rent?v=>`${nis(v)} לחודש`:short;
   const verb=m.rent?"שכר דירה חציוני":"מחיר חציוני בעסקאות";
   const tiles=[];
