@@ -825,3 +825,20 @@ html.display-motion,html.display-motion *,html.display-motion *::before,html.dis
 .sold-card .card-media img{filter:saturate(.85)}
 .tag-sold{background:#7a1f2b;color:#fff}
 .sold-card h3{font-size:1rem}
+
+/* Client reviews */
+.reviews-section{padding-block:34px 10px}
+.reviews-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}
+.reviews-head h2{margin:0}
+.reviews-score{margin:6px 0 0;color:var(--muted)}
+.reviews-score strong{color:var(--ink);margin-inline-start:6px}
+.stars,.review-stars{color:#e0a400;letter-spacing:1px}
+.reviews-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.review-card{margin:0;display:flex;flex-direction:column;gap:10px;padding:20px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.review-card blockquote{margin:0;flex:1;font-size:1rem;line-height:1.7}
+.review-card figcaption{font-weight:700;font-size:.9rem}
+.review-card figcaption span{font-weight:400;color:var(--muted)}
+.agent-rating{display:block;margin-top:2px;font-size:.78rem;color:var(--muted);text-decoration:none}
+.agent-rating span{color:#e0a400}
+@media(max-width:900px){.reviews-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.reviews-grid{grid-template-columns:minmax(0,1fr)}}

@@ -1,3 +1,4 @@
+import {googleRating} from "../dist/reviews.mjs";
 import {neighborhoodFor} from "../dist/seo-areas.mjs";
 import {propertyStates, leadStates, intents, channels, featureNames, idPattern, supportedTypes, marketingCopy} from "./model.mjs";
 import {makeVisits} from "./visits.mjs";
@@ -552,7 +553,7 @@ async function listingPage(env,id,url,assets) {
             <button class="button whatsapp-cta" type="button" data-whatsapp-property="${id}">${icon("chat")}<span>שלחו הודעה ב־WhatsApp</span></button>
             <a class="button primary" href="/visit?property=${id}">${icon("home")}<span>תיאום סיור בנכס</span></a>
             <div class="call-links">${calls}</div>
-            <div class="agent-strip"><img src="/media/team.webp" alt="" width="56" height="56" loading="lazy"><div><strong>שרל ורועי וילדורף</strong><small>${icon("check")}מתווכים מורשים</small><small>רישיונות <bdi>30826114</bdi> · <bdi>3211578</bdi></small></div></div>
+            <div class="agent-strip"><img src="/media/team.webp" alt="" width="56" height="56" loading="lazy"><div><strong>שרל ורועי וילדורף</strong><small>${icon("check")}מתווכים מורשים</small><small>רישיונות <bdi>30826114</bdi> · <bdi>3211578</bdi></small><a class="agent-rating" href="${googleRating.url}" target="_blank" rel="noopener"><span aria-hidden="true">★★★★★</span> ${googleRating.rating.toFixed(1)} · ${googleRating.count} ביקורות בגוגל</a></div></div>
           </div>
         </aside>
       </div>

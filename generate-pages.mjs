@@ -3,6 +3,7 @@ import {properties, dealNames, towns, townSlugs, showSamples} from "./dist/listi
 import {propertyUrl} from "./dist/engagement.mjs";
 import {singleBrackets, additionalBrackets} from "./dist/tax.mjs";
 import {gederaNeighborhoods, inPlace} from "./dist/seo-areas.mjs";
+import {reviews, googleRating} from "./dist/reviews.mjs";
 
 const root = new URL("./dist/", import.meta.url);
 const index = new URL("index.html", root);
@@ -35,7 +36,7 @@ function layout({path, title, description, contents, image, head = ""}) {
   <meta property="og:url" content="${url.href}">
   ${image ? `<meta property="og:image" content="${new URL(image, origin).href}">` : ""}
   <link rel="icon" href="/media/shefa-round.webp" type="image/webp">
-  <link rel="stylesheet" href="/styles.css?v=22">
+  <link rel="stylesheet" href="/styles.css?v=23">
   <script type="module" src="/page.mjs?v=10"></script>
   <script type="module" src="/site-tools.mjs?v=3"></script>
 ${head}</head>
@@ -207,6 +208,16 @@ function areaPage(town) {
   </article>`});
 }
 
+
+// ---------- Client reviews (homepage and about page) ----------
+const stars = `<span class="stars" aria-hidden="true">★★★★★</span>`;
+const reviewsSection = `<section class="reviews-section" aria-labelledby="reviews-title">
+        <div class="reviews-head"><div><h2 id="reviews-title">מה הלקוחות אומרים</h2>
+          <p class="reviews-score">${stars}<strong>${googleRating.rating.toFixed(1)}</strong> · ${googleRating.count} ביקורות בגוגל</p></div>
+          <a class="button outline" href="${googleRating.url}" target="_blank" rel="noopener">לכל הביקורות בגוגל</a></div>
+        <div class="reviews-grid">${reviews.map(r => `<figure class="review-card"><div class="review-stars" role="img" aria-label="5 מתוך 5 כוכבים">★★★★★</div><blockquote>${escaped(r.text)}</blockquote><figcaption>${escaped(r.name)} · <span>ביקורת בגוגל</span></figcaption></figure>`).join("")}</div>
+      </section>`;
+
 // ---------- Valuation page ----------
 const valuationPage = layout({
   path: "/valuation.html",
@@ -274,6 +285,7 @@ const aboutPage = layout({
       <p class="about-closing">נשמח לקבל פניות מכם ולהציע לכם את שירותינו למכירה או לקניית בית חלומותיכם! חברת שפע נדל״ן על כלל סוכניה עומדת לרשותכם בכל עת.</p>
       <div class="action-row"><a class="button primary" href="/valuation.html">כמה שווה הנכס שלי?</a><button class="button outline" type="button" data-contact>יצירת קשר</button><a class="button outline" href="/#listings">לנכסים שלנו</a></div>
     </div>
+    ${reviewsSection}
     <section class="sold-section" hidden aria-labelledby="sold-title"><h2 id="sold-title">נמכרו והושכרו לאחרונה</h2><p class="section-caption">נכסים שליווינו עד החתימה. רוצים שגם הנכס שלכם יופיע כאן? <a class="inline-link" href="/valuation.html">הערכת שווי חינם</a></p><div id="sold-listings" class="cards"><!--SOLD--></div></section>
   </article>`,
 });
@@ -611,5 +623,6 @@ for (const calc of calculators) await writeFile(new URL(`calculators/${calc.slug
 await writeFile(new URL("privacy.html", root), privacyPage);
 
 const listingLinks = (showSamples ? properties : []).map(property => `<article class="card static-listing"><h3><a href="${propertyUrl(property.id)}">${escaped(property.title)}</a></h3><p>${escaped(property.town)} · ${dealNames[property.deal]} · נכס לדוגמה</p></article>`).join("\n          ");
-const linkedHome = home.replace(/<!-- BEGIN LISTING LINKS -->[\s\S]*?<!-- END LISTING LINKS -->/, `<!-- BEGIN LISTING LINKS -->\n          ${listingLinks}\n        <!-- END LISTING LINKS -->`);
+const reviewedHome = home.replace(/<!-- BEGIN REVIEWS -->[\s\S]*?<!-- END REVIEWS -->/, `<!-- BEGIN REVIEWS -->\n      ${reviewsSection}\n      <!-- END REVIEWS -->`);
+const linkedHome = reviewedHome.replace(/<!-- BEGIN LISTING LINKS -->[\s\S]*?<!-- END LISTING LINKS -->/, `<!-- BEGIN LISTING LINKS -->\n          ${listingLinks}\n        <!-- END LISTING LINKS -->`);
 if (linkedHome !== home) await writeFile(index, linkedHome);
