@@ -42,3 +42,9 @@ test("sold gallery: shown only when there are closed deals, never with prices", 
   assert.match(html, /נמכר/);
   assert.doesNotMatch(soldCard({title: "x", status: "rented"}), /₪/);
 });
+
+test("weekly vs reminder schedules", async () => {
+  const {isWeekly} = await import("../worker/site-cron.mjs");
+  assert.ok(isWeekly("0 5 * * sun")); assert.ok(isWeekly("0 5 * * 0"));
+  assert.ok(!isWeekly("*/30 * * * *")); assert.ok(!isWeekly("0 * * * *"));
+});

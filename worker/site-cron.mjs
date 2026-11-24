@@ -8,7 +8,9 @@ import {intents} from "./model.mjs";
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const num = value => new Intl.NumberFormat("he-IL").format(value || 0);
 const waNumber = phone => String(phone || "").replace(/\D/g, "").replace(/^0/, "972");
-export const WEEKLY_CRON = "0 5 * * 0";
+export const WEEKLY_CRON = "0 5 * * sun";
+// A schedule with a day of the week (e.g. "0 5 * * sun") is the weekly report; any other runs the reminders.
+export const isWeekly = cron => (String(cron || "").trim().split(/\s+/)[4] || "*") !== "*";
 
 export function israelHour(date = new Date()) {
   return Number(new Intl.DateTimeFormat("en-GB", {timeZone: "Asia/Jerusalem", hour: "2-digit", hour12: false}).format(date)) % 24;

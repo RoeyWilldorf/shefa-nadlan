@@ -34,7 +34,7 @@ binding = "AI"
 NOTIFY_EMAIL = "roivil13@gmail.com"
 SITE_ORIGIN = "https://shefa-nadlan.roivil13.workers.dev"
 
-# Scheduled jobs: hourly reminders about unanswered website leads, and a weekly report
-# every Sunday at 05:00 UTC (07:00/08:00 in Israel).
+# Scheduled jobs (also set in the Cloudflare dashboard): reminders about unanswered website
+# leads every 30 minutes, and a weekly report every Sunday at 05:00 UTC (07:00/08:00 in Israel).
 [triggers]
-crons = ["0 * * * *", "0 5 * * 0"]
+crons = ["*/30 * * * *", "0 5 * * sun"]
