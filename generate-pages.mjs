@@ -7,9 +7,8 @@ const index = new URL("index.html", root);
 const home = await readFile(index, "utf8");
 const origin = new URL(home.match(/<link rel="canonical" href="([^"]+)"/)[1]).origin;
 const symbols = home.match(/  <svg class="symbols"[\s\S]+?\n  <\/svg>/)[0];
-const brand = home.match(/<a class="wordmark" href="#top" aria-label=[\s\S]+?<\/a>/)[0].replace('href="#top"', 'href="/"');
-const footer = home.match(/  <footer class="footer">[\s\S]+?<\/footer>/)[0]
-  .replace('href="#top"', 'href="/"').replaceAll('href="#', 'href="/#');
+const siteHeader = home.match(/  <header class="site-header">[\s\S]+?<\/header>/)[0];
+const footer = home.match(/  <footer class="site-footer">[\s\S]+?<\/footer>/)[0];
 const dialogs = home.match(/  <p id="page-status"[^\n]*/)[0]+"\n"+home.match(/  <dialog id="dialog"[^\n]*/)[0];
 const escaped = value => String(value).replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
 const number = new Intl.NumberFormat("he-IL");
@@ -34,21 +33,14 @@ function layout({path, title, description, contents, image, head = ""}) {
   <meta property="og:url" content="${url.href}">
   ${image ? `<meta property="og:image" content="${new URL(image, origin).href}">` : ""}
   <link rel="icon" href="/media/shefa-round.webp" type="image/webp">
-  <link rel="stylesheet" href="/styles.css?v=16">
+  <link rel="stylesheet" href="/styles.css?v=20">
   <script type="module" src="/page.mjs?v=10"></script>
   <script type="module" src="/site-tools.mjs?v=3"></script>
 ${head}</head>
 <body data-site-tools="public">
 ${symbols}
 <a class="skip" href="#content">דילוג לתוכן הראשי</a>
-<header class="header">
-  <div class="wrap header-inner">
-    ${brand}
-    <nav aria-label="ניווט ראשי"><a href="/#listings">נכסים</a><a href="/#services">שירותי תיווך</a><a href="/#guides">מדריכים</a><a href="/valuation.html">הערכת שווי</a><a href="/about.html">אודות</a></nav>
-    <a class="mobile-tools" href="/#tools" aria-label="מחשבונים ומסמכים">${icon("calculator")}<span>כלים</span></a>
-    <button type="button" class="button outline header-contact" data-contact>יצירת קשר</button>
-  </div>
-</header>
+${siteHeader}
 <main class="wrap secondary-page" id="content" tabindex="-1">
 ${contents}
 </main>

@@ -546,7 +546,7 @@ async function listingPage(env,id,url,assets) {
             <button class="button whatsapp-cta" type="button" data-whatsapp-property="${id}">${icon("chat")}<span>שלחו הודעה ב־WhatsApp</span></button>
             <a class="button primary" href="/visit?property=${id}">${icon("home")}<span>תיאום סיור בנכס</span></a>
             <div class="call-links">${calls}</div>
-            <p class="trust-note">${icon("check")}תיווך מורשה · שפע נדל״ן, גדרה · מענה מהיר</p>
+            <div class="agent-strip"><img src="/media/team.webp" alt="" width="56" height="56" loading="lazy"><div><strong>שרל ורועי וילדורף</strong><small>${icon("check")}מתווכים מורשים</small><small>רישיונות <bdi>30826114</bdi> · <bdi>3211578</bdi></small></div></div>
           </div>
         </aside>
       </div>

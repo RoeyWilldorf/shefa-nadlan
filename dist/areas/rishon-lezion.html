@@ -15,7 +15,7 @@
   <meta property="og:url" content="https://shefa-nadlan-gedera.roivil13.chatgpt.site/areas/rishon-lezion.html">
   <meta property="og:image" content="https://shefa-nadlan-gedera.roivil13.chatgpt.site/media/hero.webp">
   <link rel="icon" href="/media/shefa-round.webp" type="image/webp">
-  <link rel="stylesheet" href="/styles.css?v=16">
+  <link rel="stylesheet" href="/styles.css?v=20">
   <script type="module" src="/page.mjs?v=10"></script>
   <script type="module" src="/site-tools.mjs?v=3"></script>
   <script type="module" src="/area.mjs?v=2"></script>
@@ -43,17 +43,28 @@
     <symbol id="info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8v.1"/></symbol>
   </svg>
 <a class="skip" href="#content">דילוג לתוכן הראשי</a>
-<header class="header">
-  <div class="wrap header-inner">
-    <a class="wordmark" href="/" aria-label="שפע נדל״ן, דף הבית">
+  <header class="site-header">
+    <div class="wrap site-header-inner">
+      <a class="wordmark" href="/" aria-label="שפע נדל״ן, דף הבית">
         <span class="logo"><img src="/media/shefa-round.webp" width="43" height="43" alt=""></span>
         <span class="brand-text"><strong>שפע נדל״ן</strong><small>גדרה והסביבה</small></span>
       </a>
-    <nav aria-label="ניווט ראשי"><a href="/#listings">נכסים</a><a href="/#services">שירותי תיווך</a><a href="/#guides">מדריכים</a><a href="/valuation.html">הערכת שווי</a><a href="/about.html">אודות</a></nav>
-    <a class="mobile-tools" href="/#tools" aria-label="מחשבונים ומסמכים"><svg class="icon" aria-hidden="true"><use href="#calculator"/></svg><span>כלים</span></a>
-    <button type="button" class="button outline header-contact" data-contact>יצירת קשר</button>
-  </div>
-</header>
+      <nav class="main-nav" aria-label="ניווט ראשי">
+        <a href="/?deal=sale#listings">דירות למכירה</a><a href="/?deal=rent#listings">להשכרה</a><a href="/#areas">אזורים</a><a href="/valuation.html">הערכת שווי</a><a href="/#tools">מחשבונים</a><a href="/about.html">אודות</a>
+      </nav>
+      <div class="header-actions">
+        <a class="header-phone" href="tel:+972527504034"><svg class="icon" aria-hidden="true"><use href="#phone"/></svg><bdi>052-7504034</bdi></a>
+        <button class="button primary header-contact" type="button" data-contact><svg class="icon" aria-hidden="true"><use href="#chat"/></svg><span>יצירת קשר</span></button>
+        <details class="menu">
+          <summary aria-label="תפריט"><svg class="icon menu-open" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><svg class="icon menu-close" aria-hidden="true"><use href="#close"/></svg></summary>
+          <nav class="menu-panel" aria-label="תפריט">
+            <a href="/?deal=sale#listings">דירות ובתים למכירה</a><a href="/?deal=rent#listings">נכסים להשכרה</a><a href="/#areas">חיפוש לפי אזור</a><a href="/valuation.html">כמה שווה הנכס שלי?</a><a href="/#tools">מחשבונים ומסמכים</a><a href="/#guides">מדריכים</a><a href="/about.html">אודות שפע נדל״ן</a>
+            <div class="menu-contact"><a href="tel:+972527504034">שרל <bdi>052-7504034</bdi></a><a href="tel:+972527504037">רועי <bdi>052-7504037</bdi></a></div>
+          </nav>
+        </details>
+      </div>
+    </div>
+  </header>
 <main class="wrap secondary-page" id="content" tabindex="-1">
 
   <nav class="breadcrumbs" aria-label="מיקום באתר"><a href="/">דף הבית</a><span aria-hidden="true">/</span><a href="/#areas">אזורים</a><span aria-hidden="true">/</span><span aria-current="page">ראשון לציון</span></nav>
@@ -88,17 +99,33 @@
     <nav class="area-others" aria-label="אזורים נוספים"><h2>אזורים נוספים שאנחנו עובדים בהם</h2><div class="town-links"><a href="/areas/gedera.html">גדרה</a><a href="/areas/yavne.html">יבנה</a><a href="/areas/bnei-ayish.html">בני עי״ש</a><a href="/areas/mazkeret-batya.html">מזכרת בתיה</a><a href="/areas/kiryat-ekron.html">קריית עקרון</a><a href="/areas/gan-yavne.html">גן יבנה</a><a href="/areas/rehovot.html">רחובות</a><a href="/areas/gderot.html">יישובי גדרות</a><a href="/areas/ashdod.html">אשדוד</a><a href="/areas/ashkelon.html">אשקלון</a><a href="/areas/kiryat-gat.html">קריית גת</a><a href="/areas/bat-yam.html">בת ים</a><a href="/areas/tel-aviv.html">תל אביב</a></div></nav>
   </article>
 </main>
-  <footer class="footer">
-    <div class="wrap footer-inner">
-      <a class="wordmark" href="/"><span class="logo"><img src="/media/shefa-round.webp" width="43" height="43" alt=""></span><span class="brand-text"><strong>שפע נדל״ן</strong><small>גדרה והסביבה</small></span></a>
-      <div class="footer-links">
-        <a href="/#office">פרטי המשרד</a><a href="/office">אזור המשרד</a><a href="/#tools">מחשבונים ומסמכים</a><a href="/about.html">אודות</a><a href="/privacy.html">מדיניות פרטיות</a><a class="inline-link" href="/accessibility.html">הצהרת נגישות</a>
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-brand">
+        <a class="wordmark" href="/" aria-label="שפע נדל״ן, דף הבית"><span class="logo"><img src="/media/shefa-round.webp" width="43" height="43" alt=""></span><span class="brand-text"><strong>שפע נדל״ן</strong><small>גדרה והסביבה</small></span></a>
+        <p>משרד תיווך משפחתי בגדרה. מלווים קונים, מוכרים, שוכרים ומשכירים בגדרה, בשפלה ובמרכז.</p>
+        <ul class="footer-social" aria-label="שפע נדל״ן ברשת">
+          <li><a href="https://www.facebook.com/ShefaNadlan/">פייסבוק</a></li><li><a href="https://www.instagram.com/shefanadlan/">אינסטגרם</a></li><li><a href="https://share.google/P9E39fvMwJgbxsasg">גוגל</a></li><li><a href="https://www.yad2.co.il/realestate/agency/2606384/forsale">יד2</a></li>
+        </ul>
       </div>
-      <div class="footer-links footer-socials" role="group" aria-label="שפע נדל״ן ברשת">
-        <a href="https://share.google/P9E39fvMwJgbxsasg">גוגל</a><a href="https://www.facebook.com/ShefaNadlan/">פייסבוק</a><a href="https://www.instagram.com/shefanadlan/">אינסטגרם</a>
+      <nav class="footer-col" aria-labelledby="footer-properties"><h2 id="footer-properties">נכסים</h2>
+        <a href="/?deal=sale#listings">נכסים למכירה</a><a href="/?deal=rent#listings">נכסים להשכרה</a><a href="/#areas">חיפוש לפי אזור</a><a href="/areas/gedera.html">נכסים בגדרה</a>
+      </nav>
+      <nav class="footer-col" aria-labelledby="footer-services"><h2 id="footer-services">שירותים ומידע</h2>
+        <a href="/valuation.html">הערכת שווי לנכס</a><a href="/mortgage.html">מחשבון משכנתא</a><a href="/#tools">מחשבוני מיסים ומסמכים</a><a href="/#guides">מדריכי קנייה, מכירה ושכירות</a>
+      </nav>
+      <div class="footer-col footer-contact"><h2>צרו קשר</h2>
+        <a href="tel:+972527504034">שרל <bdi>052-7504034</bdi></a><a href="tel:+972527504037">רועי <bdi>052-7504037</bdi></a>
+        <a href="https://www.waze.com/live-map/directions/?to=place.w.22806846.227937390.411740">סברדלוב 5, גדרה · ניווט ב־Waze</a>
+        <button class="button light footer-cta" type="button" data-contact>השאירו פרטים ונחזור אליכם</button>
       </div>
-      <span>© שפע נדל״ן · וילדורף יזמות בע״מ</span>
-      <span class="footer-licenses">מתווכים מוסמכים: שרל וילדורף, רישיון תיווך <bdi>30826114</bdi> · רועי וילדורף, רישיון תיווך <bdi>3211578</bdi></span>
+    </div>
+    <div class="footer-bottom">
+      <div class="wrap footer-bottom-inner">
+        <span>© שפע נדל״ן · וילדורף יזמות בע״מ</span>
+        <span class="footer-licenses">מתווכים מוסמכים: שרל וילדורף, רישיון <bdi>30826114</bdi> · רועי וילדורף, רישיון <bdi>3211578</bdi></span>
+        <span class="footer-legal"><a href="/accessibility.html">הצהרת נגישות</a><a href="/privacy.html">מדיניות פרטיות</a><a href="/office">כניסת המשרד</a></span>
+      </div>
     </div>
   </footer>
   <p id="page-status" class="sr-only" role="status" aria-atomic="true"></p>

@@ -45,7 +45,7 @@ function facts(property) {
   </ul>`;
 }
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 12;
 let shown = PAGE_SIZE;
 const isNew = property => property.publishedAt && Date.now() - Date.parse(property.publishedAt) < 14 * 86400000;
 
@@ -112,7 +112,8 @@ function renderResults() {
   empty.hidden = Boolean(results.length);
   document.querySelector("#no-results-inquiry").dataset.contact = "alert";
   // "Notify me" carries the current search into the request form.
-  for (const button of document.querySelectorAll("#no-results-inquiry, #alert-me")) {
+  syncChips(filters);
+  for (const button of document.querySelectorAll("#no-results-inquiry, #alert-me, #notify-similar")) {
     button.dataset.prefillDeal = filters.deal === "rent" ? "rent" : "buy";
     button.dataset.prefillTown = filters.town || "";
     button.dataset.prefillRooms = filters.rooms || "";
@@ -122,6 +123,41 @@ function renderResults() {
     ? "אין נכסים שמורים בתוצאות" : "אין נכסים שתואמים לחיפוש";
   return true;
 }
+
+// Quick filter buttons (town, rooms) drive the same form fields as the full filter panel.
+const townChips = document.querySelector("#town-chips");
+const moreFilters = document.querySelector(".more-filters");
+const advanced = document.querySelector("#advanced-filters");
+function buildTownChips() {
+  const counts = new Map();
+  for (const property of properties) counts.set(property.town, (counts.get(property.town) || 0) + 1);
+  const top = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  townChips.innerHTML = top.map(([town, n]) => `<button type="button" class="chip" data-chip="town" data-value="${safe(town)}">${safe(town)} <small>${n}</small></button>`).join("");
+  townChips.hidden = top.length < 2;
+}
+function syncChips(filters) {
+  for (const chip of filtersForm.querySelectorAll("[data-chip]")) chip.setAttribute("aria-pressed", String(filters[chip.dataset.chip] === chip.dataset.value));
+  const chipValues = name => [...filtersForm.querySelectorAll(`[data-chip="${name}"]`)].map(chip => chip.dataset.value);
+  const hidden = ["q", "type", "min", "max", "neighborhood", "minArea", "amenity"].filter(name => filters[name]).length
+    + ["town", "rooms"].filter(name => filters[name] && !chipValues(name).includes(filters[name])).length;
+  const badge = moreFilters.querySelector(".filter-count");
+  badge.hidden = !hidden; badge.textContent = hidden;
+  const savedCount = Number(document.querySelector("[data-saved-count]")?.textContent || 0);
+  savedFilter.hidden = !savedCount && savedFilter.getAttribute("aria-pressed") !== "true";
+}
+filtersForm.addEventListener("click", event => {
+  const chip = event.target.closest("[data-chip]");
+  if (!chip) return;
+  const field = filterField(chip.dataset.chip);
+  field.value = field.value === chip.dataset.value ? "" : chip.dataset.value;
+  filtersForm.dispatchEvent(new Event("input", {bubbles: true}));
+});
+moreFilters.addEventListener("click", () => {
+  const open = moreFilters.getAttribute("aria-expanded") !== "true";
+  moreFilters.setAttribute("aria-expanded", String(open));
+  advanced.hidden = !open;
+  if (open) filterField("q").focus();
+});
 
 function goToResults() {
   const heading = document.querySelector("#listings-title");
@@ -146,6 +182,8 @@ document.querySelector("#show-more").addEventListener("click", () => {
 filtersForm.addEventListener("submit", event => {
   event.preventDefault();
   if (renderResults()) {
+    moreFilters.setAttribute("aria-expanded", "false");
+    advanced.hidden = true;
     goToResults();
   } else {
     filtersForm.querySelector('[aria-invalid="true"]').focus();
@@ -154,8 +192,8 @@ filtersForm.addEventListener("submit", event => {
 sort.addEventListener("change", renderResults);
 reset.addEventListener("click", () => {
   clearFilters();
-  filterField("q").focus({preventScroll: true});
-  document.querySelector("#finder").scrollIntoView({block: "center"});
+  document.querySelector("#listings-title").focus({preventScroll: true});
+  document.querySelector("#listings").scrollIntoView({block: "start"});
 });
 document.querySelector("#empty-reset").addEventListener("click", () => {
   clearFilters();
@@ -205,6 +243,7 @@ try {
       for(const value of new Set(values)) if(![...input.options].some(option=>option.value===value)) input.add(new Option(value,value));
     }
     if(query.get("town")&&[...filterField("town").options].some(option=>option.value===query.get("town"))) filterField("town").value=query.get("town");
+    buildTownChips();
     document.querySelector("#listings-title").textContent="נכסים למכירה ולהשכרה";
     document.querySelector("#listings .section-caption").textContent="כל הנכסים שהמשרד משווק כרגע.";
     renderResults();
