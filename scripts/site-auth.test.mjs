@@ -223,3 +223,15 @@ test("listing import image proxy is owner-only and limited to Yad2 hosts",async(
     assert.equal((await call("/api/office/import-image?url="+encodeURIComponent("https://evil.example/x.jpg"),{headers:{cookie}})).status,400);
   } finally { globalThis.fetch=realFetch; }
 });
+
+test("redirects other addresses to the primary domain once it is set", async () => {
+  const {withSiteAuth} = await import("../worker/site-auth.mjs");
+  const site = withSiteAuth({fetch: async () => new Response("ok")}, {migrations: [], guides: []});
+  const r = await site.fetch(new Request("https://shefa-nadlan.roivil13.workers.dev/areas/gedera.html?x=1"), {PRIMARY_HOST: "sf-shefa.co.il"}, {});
+  assert.equal(r.status, 301);
+  assert.equal(r.headers.get("Location"), "https://sf-shefa.co.il/areas/gedera.html?x=1");
+  const www = await site.fetch(new Request("https://www.sf-shefa.co.il/"), {PRIMARY_HOST: "sf-shefa.co.il"}, {});
+  assert.equal(www.headers.get("Location"), "https://sf-shefa.co.il/");
+  const none = await site.fetch(new Request("https://shefa-nadlan.roivil13.workers.dev/robots.txt"), {}, {});
+  assert.notEqual(none.status, 301);
+});

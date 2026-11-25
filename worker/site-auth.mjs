@@ -192,6 +192,12 @@ export function withSiteAuth(worker,{migrations=[],guides=[]}={}) {
       await migrated;
     }
     const url=new URL(request.url);
+    // One public address: once PRIMARY_HOST is set (e.g. sf-shefa.co.il), the workers.dev address
+    // and www. answer page requests with a permanent redirect, so Google indexes a single site.
+    const primary=env.PRIMARY_HOST;
+    if (primary&&url.hostname!==primary&&(url.hostname.endsWith(".workers.dev")||url.hostname===`www.${primary}`)&&["GET","HEAD"].includes(request.method)) {
+      return new Response(null,{status:301,headers:{Location:`https://${primary}${url.pathname}${url.search}`,"Cache-Control":"public, max-age=3600"}});
+    }
     const path=url.pathname;
     const method=request.method;
     const ip=request.headers.get("cf-connecting-ip")||request.headers.get("x-forwarded-for")?.split(",")[0].trim()||"local";
